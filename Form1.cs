@@ -1,23 +1,22 @@
 ﻿using System;
 using System.Windows.Forms;
-
 using Tekla.Structures;
-
 using Tekla.Structures.Model;
-
 using Tekla.Structures.Model.UI;
-
 using Tekla.Structures.Geometry3d;
-
 using Tekla.Structures.Model.Operations;
 
 using TSM = Tekla.Structures.Model;
 using TSMUI = Tekla.Structures.Model.UI;
 using TSG = Tekla.Structures.Geometry3d;
 
+using Newtonsoft.Json;
+using System.IO;
 using System.Collections.Generic;
 using System.Collections;
 using Tekla.Structures.Solid;
+using WHExtensionElement;
+using System.Runtime.Remoting.Messaging;
 
 namespace REVIT_IMPORT
 {
@@ -56,6 +55,38 @@ namespace REVIT_IMPORT
                  *
                  *
                  */
+                var beamData = File.ReadAllText(@"..\..\Data\Beam.json");
+                ICollection<WhBeam> whBeamList = JsonConvert.DeserializeObject<ICollection<WhBeam>>(beamData);
+                foreach (WhBeam beamDetail in whBeamList)
+                {
+                    //Point beamSP = new Point(beamDetail.StartPoint.X, beamDetail.StartPoint.Y, beamDetail.StartPoint.Z + Convert.ToDouble(beamDetail.h) / 2);
+                    //Point beamEP = new Point(beamDetail.EndPoint.X, beamDetail.EndPoint.Y, beamDetail.EndPoint.Z + Convert.ToDouble(beamDetail.h) / 2);
+
+                    double beamTopLevel = createZValue(Convert.ToDouble(beamDetail.h));
+                    Point beamSP = new Point(beamDetail.StartPoint.X, beamDetail.StartPoint.Y, beamTopLevel);
+                    Point beamEP = new Point(beamDetail.EndPoint.X, beamDetail.EndPoint.Y, beamTopLevel);
+
+                    beamCreate(beamDetail.mark, beamDetail.h, beamDetail.b, beamDetail.name, projectMaterial, beamSP, beamEP);
+                    //string beamLength = beamDetail.length;   -wait for Beam's Length
+                }
+
+                #region Slab Input
+
+                var slabData = File.ReadAllText(@"..\..\Data\Slab.json");
+                ICollection<WhSlab> whSlabList = JsonConvert.DeserializeObject<ICollection<WhSlab>>(slabData);
+                foreach (WhSlab slabDetail in whSlabList)
+                {
+                    List<TSG.Point> slabPointBoundaryList = new List<Point>();
+                    double slabThickness = slabDetail.ThickNess;
+                    slabPointBoundaryList.Add(new Point(slabDetail.SketchOut[0].CurvePoint[0].X, slabDetail.SketchOut[0].CurvePoint[0].Y, slabDetail.SketchOut[0].CurvePoint[0].Z + slabThickness / 2 - 29500.00));
+                    foreach (WhCurve slabSketchOut in slabDetail.SketchOut)
+                    {
+                        slabPointBoundaryList.Add(new Point(slabSketchOut.CurvePoint[1].X, slabSketchOut.CurvePoint[1].Y, slabSketchOut.CurvePoint[1].Z + slabThickness / 2 - 29500.00));
+                    }
+                    slabCreate(slabThickness, projectMaterial, slabPointBoundaryList);
+                }
+
+                #endregion Slab Input
 
                 /*Issue: ko chắc về cao độ dưới của dầm. Thông thường sẽ là -225 so với FFL nhưng sẽ thay đổi
                  * nếu Beam Height !== 205
@@ -138,60 +169,62 @@ namespace REVIT_IMPORT
 
                 #endregion Input
 
-                beamCreate(botBeamName, botBeamProfile, projectMaterial, botBeamSP, botBeamEP);
-                beamCreate(topBeamName, topBeamProfile, projectMaterial, _topBeamSP, _topBeamEP);
-                beamCreate(leftBeamName, leftBeamProfile, projectMaterial, _leftBeamSP, _leftBeamEP);
-                beamCreate(rightBeamName, rightBeamProfile, projectMaterial, _rightBeamSP, _rightBeamEP);
+                //beamCreate(botBeamName, botBeamProfile, projectMaterial, botBeamSP, botBeamEP);
+                //beamCreate(topBeamName, topBeamProfile, projectMaterial, _topBeamSP, _topBeamEP);
+                //beamCreate(leftBeamName, leftBeamProfile, projectMaterial, _leftBeamSP, _leftBeamEP);
+                //beamCreate(rightBeamName, rightBeamProfile, projectMaterial, _rightBeamSP, _rightBeamEP);
 
                 //Create multi slabs
-                foreach (Hashtable slab in slabs)
-                {
-                    string slabThickness = (string)slab["thickness"];
-                    List<Point> slabPointsList = (List<Point>)slab["pointsList"];
-                    slabCreate(slabThickness, projectMaterial, slabPointsList);
-                }
+                //foreach (Hashtable slab in slabs)
+                //{
+                //    string slabThickness = (string)slab["thickness"];
+                //    List<Point> slabPointsList = (List<Point>)slab["pointsList"];
+                //    slabCreate(slabThickness, projectMaterial, slabPointsList);
+                //}
                 //Check intersection between slab and Beam
-                ModelObjectEnumerator slabEnum = model.GetModelObjectSelector().GetAllObjectsWithType(ModelObject.ModelObjectEnum.CONTOURPLATE);
-                while (slabEnum.MoveNext())
-                {
-                    ContourPlate slab = slabEnum.Current as ContourPlate;
-                    Solid slabSolid = slab.GetSolid();
-                    ModelObjectEnumerator beamEnum = model.GetModelObjectSelector().GetAllObjectsWithType(ModelObject.ModelObjectEnum.BEAM);
-                    while (beamEnum.MoveNext())
-                    {
-                        BooleanPart cut = new BooleanPart();
-                        //Missing class. check sau
-                        cut.Father = beamEnum.Current;
-                        cut.SetOperativePart(slab);
-                        if (!cut.Insert())
-                        {
-                            MessageBox.Show("Inter failed");
-                        }
-                        //slab.Delete();
-                    }
-                }
+#warning double check cut part method
+                //ModelObjectEnumerator slabEnum = model.GetModelObjectSelector().GetAllObjectsWithType(ModelObject.ModelObjectEnum.CONTOURPLATE);
+                //while (slabEnum.MoveNext())
+                //{
+                //    ContourPlate slab = slabEnum.Current as ContourPlate;
+                //    Solid slabSolid = slab.GetSolid();
+                //    ModelObjectEnumerator beamEnum = model.GetModelObjectSelector().GetAllObjectsWithType(ModelObject.ModelObjectEnum.BEAM);
+                //while (beamEnum.MoveNext())
+                //{
+                //BooleanPart cut = new BooleanPart();
+                //Missing class. check sau
+                //cut.Father = beamEnum.Current;
+                //cut.SetOperativePart(slab);
+                //if (!cut.Insert())
+                //{
+                //    MessageBox.Show("Inter failed");
+                //}
+                //slab.Delete();
+                //}
+                //}
 
                 model.CommitChanges();
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.ToString());
+                Console.WriteLine(ex.ToString());
             }
         }
 
-        private static void beamCreate(string beamName, string beamProfile, string beamMaterial, TSG.Point beamCreateSP, TSG.Point beamCreateEP)
+        private static void beamCreate(string beamName, string beamHeight, string beamWidth, string beamMark, string beamMaterial, TSG.Point beamSP, TSG.Point beamEP)
         {
-            Beam beamCreate = new Beam(Beam.BeamTypeEnum.BEAM);
-            beamCreate.Name = beamName;
-            beamCreate.Profile.ProfileString = beamProfile;
-            beamCreate.Material.MaterialString = beamMaterial;
-            beamCreate.Class = "6";
-            beamCreate.StartPoint = beamCreateSP;
-            beamCreate.EndPoint = beamCreateEP;
-            beamCreate.Insert();
+            Beam beam = new Beam(Beam.BeamTypeEnum.BEAM);
+            beam.Name = beamName;
+            beam.Profile.ProfileString = $"{beamHeight}*{beamWidth}";
+            beam.Material.MaterialString = beamMaterial;
+            beam.Class = "2";
+            beam.StartPoint = beamSP;
+            beam.EndPoint = beamEP;
+            beam.Insert();
+            beam.SetUserProperty("USER_FIELD_2", beamMark);
         }
 
-        private static void slabCreate(string slabThickness, string slabMaterial, List<Point> slabPointsList)
+        private static void slabCreate(double slabThickness, string slabMaterial, List<Point> slabPointsList)
         {
             ContourPlate slab = new ContourPlate();
 
@@ -200,7 +233,7 @@ namespace REVIT_IMPORT
                 slab.AddContourPoint(new ContourPoint(slabPoint, null));
             }
             slab.Name = $"SLAB-{slabThickness}";
-            slab.Profile.ProfileString = slabThickness;
+            slab.Profile.ProfileString = slabThickness.ToString();
             slab.Material.MaterialString = slabMaterial;
             slab.Position.Depth = Position.DepthEnum.BEHIND;
             slab.Class = "11";
@@ -244,34 +277,10 @@ namespace REVIT_IMPORT
         private void button1_Click(object sender, EventArgs e)
         {
             Model model = new Model();
-
-            Beam beam1 = new Beam(new Point(1000.0, 1000.0, 0.0), new Point(1000.0, 2000.0, 0.0));
-            Beam beam2 = new Beam(new Point(500.0, 1500.0, 250.0), new Point(1500.0, 1500.0, 250.0));
-            BooleanPart cut = new BooleanPart { Father = beam1 };
-            cut.SetOperativePart(beam2);
-
-            Solid solid1 = beam1.GetSolid(Solid.SolidCreationTypeEnum.RAW);
-            Solid solid2 = beam1.GetSolid(Solid.SolidCreationTypeEnum.NORMAL);
-
-            ShellEnumerator shells = solid1.GetCutPart(solid2);
-
-            int shellCount = 0;
-            List<int> faceCounts = new List<int>();
-
-            while (shells.MoveNext())
-            {
-                var shell = shells.Current as Shell;
-                if (shell != null)
-                {
-                    FaceEnumerator faces = shell.GetFaceEnumerator();
-                    faceCounts.Insert(shellCount, 0);
-                    while (faces.MoveNext())
-                    {
-                        faceCounts[shellCount]++;
-                    }
-                }
-                shellCount++;
-            }
+            Picker picker = new Picker();
+            ModelObject enumerator = picker.PickObject(Picker.PickObjectEnum.PICK_ONE_PART);
+            Beam beam = enumerator as Beam;
+            beam.SetUserProperty("USER_FIELD_2", "test");
         }
     }
 }
