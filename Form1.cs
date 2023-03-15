@@ -17,6 +17,7 @@ using System.Collections;
 using Tekla.Structures.Solid;
 using WHExtensionElement;
 using System.Runtime.Remoting.Messaging;
+using System.Reflection;
 
 namespace REVIT_IMPORT
 {
@@ -49,41 +50,45 @@ namespace REVIT_IMPORT
                 /* Can detect orientation cua model xem cai nao la top, bot
                  * App sẽ vẽ từ Bottom beam
                  *
-                 * Đang kỳ vọng Trường sẽ xuất được điểm Lower start point của bottom beam.
-                 *
                  * Chưa xử lý case có Middle Beam do thiếu input
                  *
                  *
                  */
-                var beamData = File.ReadAllText(@"..\..\Data\Beam.json");
+                var beamData = File.ReadAllText(@"..\..\Data\MockBeam.json");
                 ICollection<WhBeam> whBeamList = JsonConvert.DeserializeObject<ICollection<WhBeam>>(beamData);
                 foreach (WhBeam beamDetail in whBeamList)
                 {
-                    //Point beamSP = new Point(beamDetail.StartPoint.X, beamDetail.StartPoint.Y, beamDetail.StartPoint.Z + Convert.ToDouble(beamDetail.h) / 2);
-                    //Point beamEP = new Point(beamDetail.EndPoint.X, beamDetail.EndPoint.Y, beamDetail.EndPoint.Z + Convert.ToDouble(beamDetail.h) / 2);
+                    Point beamSP = new Point(beamDetail.StartPoint.X, beamDetail.StartPoint.Y, beamDetail.StartPoint.Z + Convert.ToDouble(beamDetail.h) / 2 - 29500.00);
+                    Point beamEP = new Point(beamDetail.EndPoint.X, beamDetail.EndPoint.Y, beamDetail.EndPoint.Z + Convert.ToDouble(beamDetail.h) / 2 - 29500.00);
 
-                    double beamTopLevel = createZValue(Convert.ToDouble(beamDetail.h));
-                    Point beamSP = new Point(beamDetail.StartPoint.X, beamDetail.StartPoint.Y, beamTopLevel);
-                    Point beamEP = new Point(beamDetail.EndPoint.X, beamDetail.EndPoint.Y, beamTopLevel);
+                    //double beamTopLevel = createZValue(Convert.ToDouble(beamDetail.h));
+                    //Point beamSP = new Point(beamDetail.StartPoint.X, beamDetail.StartPoint.Y, beamTopLevel);
+                    //Point beamEP = new Point(beamDetail.EndPoint.X, beamDetail.EndPoint.Y, beamTopLevel);
 
-                    beamCreate(beamDetail.mark, beamDetail.h, beamDetail.b, beamDetail.name, projectMaterial, beamSP, beamEP);
+                    Beam beamMain = beamCreate(beamDetail.name, beamDetail.h, beamDetail.b, beamDetail.type, projectMaterial, beamSP, beamEP);
+                    Point beamPCStartPoint = new Point(-1927.42, 3252.39, -20);
+                    Point beamPCEndPoint = new Point(-1927.42, 4382.39, -20);
+                    createBeamPartCut(beamMain, 60.0, 200.0, beamPCStartPoint, beamPCEndPoint);
+
                     //string beamLength = beamDetail.length;   -wait for Beam's Length
                 }
 
                 #region Slab Input
 
-                var slabData = File.ReadAllText(@"..\..\Data\Slab.json");
+                var slabData = File.ReadAllText(@"..\..\Data\MockSlab.json");
                 ICollection<WhSlab> whSlabList = JsonConvert.DeserializeObject<ICollection<WhSlab>>(slabData);
                 foreach (WhSlab slabDetail in whSlabList)
                 {
                     List<TSG.Point> slabPointBoundaryList = new List<Point>();
                     double slabThickness = slabDetail.ThickNess;
-                    slabPointBoundaryList.Add(new Point(slabDetail.SketchOut[0].CurvePoint[0].X, slabDetail.SketchOut[0].CurvePoint[0].Y, slabDetail.SketchOut[0].CurvePoint[0].Z + slabThickness / 2 - 29500.00));
+                    slabPointBoundaryList.Add(new Point(slabDetail.SketchOut[0].CurvePoint[0].X, slabDetail.SketchOut[0].CurvePoint[0].Y, slabDetail.SketchOut[0].CurvePoint[0].Z - 29500.00));
                     foreach (WhCurve slabSketchOut in slabDetail.SketchOut)
                     {
-                        slabPointBoundaryList.Add(new Point(slabSketchOut.CurvePoint[1].X, slabSketchOut.CurvePoint[1].Y, slabSketchOut.CurvePoint[1].Z + slabThickness / 2 - 29500.00));
+                        slabPointBoundaryList.Add(new Point(slabSketchOut.CurvePoint[1].X, slabSketchOut.CurvePoint[1].Y, slabSketchOut.CurvePoint[1].Z - 29500.00));
                     }
-                    slabCreate(slabThickness, projectMaterial, slabPointBoundaryList);
+                    ContourPlate slab = slabCreate(slabThickness, projectMaterial, slabPointBoundaryList);
+
+                    createPartCutSlab(model, slab);
                 }
 
                 #endregion Slab Input
@@ -157,12 +162,16 @@ namespace REVIT_IMPORT
                  */
                 List<Point> slabPointsList1 = new List<Point> { new Point(0.0, 2100, -80), new Point(1880.00, 2100, -80), new Point(1880.00, 3940.00, -80), new Point(0.0, 3940.00, -80) };
                 List<Point> slabPointsList2 = new List<Point> { new Point(-200.00, 3940.00, -10.00), new Point(2080.0, 3940.00, -10.0), new Point(2080.0, 5690.0, -10.0), new Point(-200.0, 5690.0, -10.0) };
-                Hashtable slab1 = new Hashtable();
-                slab1.Add("pointsList", slabPointsList1);
-                slab1.Add("thickness", "65");
-                Hashtable slab2 = new Hashtable();
-                slab2.Add("pointsList", slabPointsList2);
-                slab2.Add("thickness", "135");
+                Hashtable slab1 = new Hashtable
+                {
+                    { "pointsList", slabPointsList1 },
+                    { "thickness", "65" }
+                };
+                Hashtable slab2 = new Hashtable
+                {
+                    { "pointsList", slabPointsList2 },
+                    { "thickness", "135" }
+                };
 
                 //Create List of hashtable. Each hashtable contain a slab's info
                 List<Hashtable> slabs = new List<Hashtable>() { slab1, slab2 };
@@ -211,20 +220,22 @@ namespace REVIT_IMPORT
             }
         }
 
-        private static void beamCreate(string beamName, string beamHeight, string beamWidth, string beamMark, string beamMaterial, TSG.Point beamSP, TSG.Point beamEP)
+        private static Beam beamCreate(string beamName, string beamHeight, string beamWidth, string beamMark, string beamMaterial, TSG.Point beamSP, TSG.Point beamEP)
         {
             Beam beam = new Beam(Beam.BeamTypeEnum.BEAM);
             beam.Name = beamName;
             beam.Profile.ProfileString = $"{beamHeight}*{beamWidth}";
             beam.Material.MaterialString = beamMaterial;
-            beam.Class = "2";
+            beam.Class = "6";
             beam.StartPoint = beamSP;
             beam.EndPoint = beamEP;
             beam.Insert();
             beam.SetUserProperty("USER_FIELD_2", beamMark);
+            Console.WriteLine("created!");
+            return beam;
         }
 
-        private static void slabCreate(double slabThickness, string slabMaterial, List<Point> slabPointsList)
+        private static ContourPlate slabCreate(double slabThickness, string slabMaterial, List<Point> slabPointsList)
         {
             ContourPlate slab = new ContourPlate();
 
@@ -238,6 +249,7 @@ namespace REVIT_IMPORT
             slab.Position.Depth = Position.DepthEnum.BEHIND;
             slab.Class = "11";
             slab.Insert();
+            return slab;
         }
 
         private static double createZValue(double beamHeight)
@@ -263,6 +275,91 @@ namespace REVIT_IMPORT
             }
         }
 
+        //PC ~ Part Cut
+        private static void createBeamPartCut(Beam beamPCFather, double beamPCHeight, double beamPCWidth, Point beamPCStartPoint, Point beamPCEndPoint)
+        {
+            Beam beamPC = new Beam();
+            beamPC.Profile.ProfileString = $"{beamPCHeight}*{beamPCWidth}";
+            beamPC.Class = BooleanPart.BooleanOperativeClassName;
+            beamPC.StartPoint = beamPCStartPoint;
+            beamPC.EndPoint = beamPCEndPoint;
+            beamPC.Insert();
+            BooleanPart beamBooleanPart = new BooleanPart();
+            beamBooleanPart.Father = beamPCFather;
+            beamBooleanPart.SetOperativePart(beamPC);
+            beamBooleanPart.Insert();
+            beamPC.Delete();
+        }
+
+        private static void createSlabPartCut(ContourPlate slab, Beam beam)
+        {
+            string tempBeamClass = beam.Class;
+            beam.Class = BooleanPart.BooleanOperativeClassName;
+            BooleanPart booleanPart = new BooleanPart();
+            booleanPart.Father = slab;
+            booleanPart.SetOperativePart(beam);
+            booleanPart.Insert();
+            beam.Class = tempBeamClass;
+        }
+
+        private static void createPartCutSlab(Model model, ContourPlate slab)
+        {
+            ModelObjectEnumerator beamEnum = model.GetModelObjectSelector().GetAllObjectsWithType(ModelObject.ModelObjectEnum.BEAM);
+            OBB slabObb = createOBB(model, slab);
+            while (beamEnum.MoveNext())
+            {
+                Beam beam = beamEnum.Current as Beam;
+                OBB beamObb = createOBB(model, beam);
+                if (slabObb.Intersects(beamObb))
+                {
+                    createSlabPartCut(slab, beam);
+                }
+            }
+        }
+
+        private static OBB createOBB(Model model, Part part)
+        {
+            OBB obb = null;
+            if (part != null)
+            {
+                WorkPlaneHandler workPlaneHandler = model.GetWorkPlaneHandler();
+                TransformationPlane originalTransformationPlane = workPlaneHandler.GetCurrentTransformationPlane();
+
+                Solid solid = part.GetSolid();
+                Point minPointInCurrentPlane = solid.MinimumPoint;
+                Point maxPointInCurrentPlane = solid.MaximumPoint;
+
+                Point centerPoint = CalculateCenterPoint(minPointInCurrentPlane, maxPointInCurrentPlane);
+
+                CoordinateSystem coordSys = part.GetCoordinateSystem();
+                TransformationPlane localTransformationPlane = new TransformationPlane(coordSys);
+                workPlaneHandler.SetCurrentTransformationPlane(localTransformationPlane);
+
+                solid = part.GetSolid();
+                Point minPoint = solid.MinimumPoint;
+                Point maxPoint = solid.MaximumPoint;
+                double extent0 = (maxPoint.X - minPoint.X) / 2;
+                double extent1 = (maxPoint.Y - minPoint.Y) / 2;
+                double extent2 = (maxPoint.Z - minPoint.Z) / 2;
+
+                workPlaneHandler.SetCurrentTransformationPlane(originalTransformationPlane);
+
+                obb = new OBB(centerPoint, coordSys.AxisX, coordSys.AxisY,
+                               coordSys.AxisX.Cross(coordSys.AxisY), extent0, extent1, extent2);
+            }
+
+            return obb;
+        }
+
+        private static Point CalculateCenterPoint(Point min, Point max)
+        {
+            double x = min.X + ((max.X - min.X) / 2);
+            double y = min.Y + ((max.Y - min.Y) / 2);
+            double z = min.Z + ((max.Z - min.Z) / 2);
+
+            return new Point(x, y, z);
+        }
+
         private static List<ContourPlate> getAllSlabs(Model model)
         {
             ModelObjectEnumerator slabEnum = model.GetModelObjectSelector().GetAllObjectsWithType(ModelObject.ModelObjectEnum.CONTOURPLATE);
@@ -277,10 +374,82 @@ namespace REVIT_IMPORT
         private void button1_Click(object sender, EventArgs e)
         {
             Model model = new Model();
-            Picker picker = new Picker();
-            ModelObject enumerator = picker.PickObject(Picker.PickObjectEnum.PICK_ONE_PART);
-            Beam beam = enumerator as Beam;
-            beam.SetUserProperty("USER_FIELD_2", "test");
+            OBB obb = null;
+
+            // In this simplified example, there are two existing beams in the model.
+            ModelObjectEnumerator beamsEnumerator =
+                model.GetModelObjectSelector().GetAllObjectsWithType(ModelObject.ModelObjectEnum.BEAM);
+
+            if (beamsEnumerator != null)
+            {
+                while (beamsEnumerator.MoveNext())
+                {
+                    Beam beam = beamsEnumerator.Current as Beam;
+
+                    if (beam != null)
+                    {
+                        if (obb == null)
+                        {
+                            obb = CreateOrientedBoundingBox(beam);
+                        }
+                        else
+                        {
+                            if (obb.Intersects(CreateOrientedBoundingBox(beam)))
+                            {
+                                // Boxes intersect.
+                                Console.WriteLine("intersect!");
+                            }
+                            else
+                            {
+                                // Boxes did not intersect.
+                            }
+                        }
+                    }
+                }
+            }
+            Point CalculateCenterPoint(Point min, Point max)
+            {
+                double x = min.X + ((max.X - min.X) / 2);
+                double y = min.Y + ((max.Y - min.Y) / 2);
+                double z = min.Z + ((max.Z - min.Z) / 2);
+
+                return new Point(x, y, z);
+            }
+            OBB CreateOrientedBoundingBox(Beam beam)
+            {
+                //OBB obb = null;
+                if (beam != null)
+                {
+                    WorkPlaneHandler workPlaneHandler = model.GetWorkPlaneHandler();
+                    TransformationPlane originalTransformationPlane = workPlaneHandler.GetCurrentTransformationPlane();
+
+                    Solid solid = beam.GetSolid();
+                    Point minPointInCurrentPlane = solid.MinimumPoint;
+                    Point maxPointInCurrentPlane = solid.MaximumPoint;
+
+                    Point centerPoint = CalculateCenterPoint(minPointInCurrentPlane, maxPointInCurrentPlane);
+
+                    CoordinateSystem coordSys = beam.GetCoordinateSystem();
+                    TransformationPlane localTransformationPlane = new TransformationPlane(coordSys);
+                    workPlaneHandler.SetCurrentTransformationPlane(localTransformationPlane);
+
+                    solid = beam.GetSolid();
+                    Point minPoint = solid.MinimumPoint;
+                    Point maxPoint = solid.MaximumPoint;
+                    double extent0 = (maxPoint.X - minPoint.X) / 2;
+                    double extent1 = (maxPoint.Y - minPoint.Y) / 2;
+                    double extent2 = (maxPoint.Z - minPoint.Z) / 2;
+
+                    workPlaneHandler.SetCurrentTransformationPlane(originalTransformationPlane);
+
+                    obb = new OBB(centerPoint, coordSys.AxisX, coordSys.AxisY,
+                                   coordSys.AxisX.Cross(coordSys.AxisY), extent0, extent1, extent2);
+                }
+
+                return obb;
+            }
+
+            model.CommitChanges();
         }
     }
 }
