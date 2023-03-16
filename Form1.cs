@@ -54,18 +54,41 @@ namespace REVIT_IMPORT
                  *
                  *
                  */
-                var beamData = File.ReadAllText(@"..\..\Data\MockBeam.json");
+                string moduleArea = cboModuleArea.SelectedItem.ToString();
+
+                #region Beam Input
+
+                string beamData = File.ReadAllText(@"..\..\Data\Beam.json");
                 ICollection<WhBeam> whBeamList = JsonConvert.DeserializeObject<ICollection<WhBeam>>(beamData);
+
+                #region Create Center Point of module
+
+                List<TSG.Point> pointList = new List<TSG.Point>();
+                foreach (WhBeam beamDetail in whBeamList)
+                {
+                    Point beamSP = new Point(beamDetail.StartPoint.X, beamDetail.StartPoint.Y, beamDetail.StartPoint.Z);
+                    Point beamEP = new Point(beamDetail.EndPoint.X, beamDetail.EndPoint.Y, beamDetail.EndPoint.Z);
+
+                    pointList.Add(beamSP);
+                    pointList.Add(beamEP);
+                }
+                TSG.Point centerPoint = CreateCenterPoint(pointList);
+
+                #endregion Create Center Point of module
+
                 foreach (WhBeam beamDetail in whBeamList)
                 {
                     Point beamSP = new Point(beamDetail.StartPoint.X, beamDetail.StartPoint.Y, beamDetail.StartPoint.Z + Convert.ToDouble(beamDetail.h) / 2 - 29500.00);
                     Point beamEP = new Point(beamDetail.EndPoint.X, beamDetail.EndPoint.Y, beamDetail.EndPoint.Z + Convert.ToDouble(beamDetail.h) / 2 - 29500.00);
 
-                    //double beamTopLevel = createZValue(Convert.ToDouble(beamDetail.h));
-                    //Point beamSP = new Point(beamDetail.StartPoint.X, beamDetail.StartPoint.Y, beamTopLevel);
-                    //Point beamEP = new Point(beamDetail.EndPoint.X, beamDetail.EndPoint.Y, beamTopLevel);
+                    /*
+                     * Truong hop can xu ly Z axis
+                    double beamTopLevel = createZValue(Convert.ToDouble(beamDetail.h));
+                    Point beamSP = new Point(beamDetail.StartPoint.X, beamDetail.StartPoint.Y, beamTopLevel);
+                    Point beamEP = new Point(beamDetail.EndPoint.X, beamDetail.EndPoint.Y, beamTopLevel);
+                    */
 
-                    Beam beamMain = beamCreate(beamDetail.name, beamDetail.h, beamDetail.b, beamDetail.type, projectMaterial, beamSP, beamEP);
+                    Beam beamMain = beamCreate(beamDetail.name, beamDetail.h, beamDetail.b, beamDetail.type, projectMaterial, beamSP, beamEP, moduleArea, centerPoint);
                     Point beamPCStartPoint = new Point(-1927.42, 3252.39, -20);
                     Point beamPCEndPoint = new Point(-1927.42, 4382.39, -20);
                     createBeamPartCut(beamMain, 60.0, 200.0, beamPCStartPoint, beamPCEndPoint);
@@ -73,9 +96,11 @@ namespace REVIT_IMPORT
                     //string beamLength = beamDetail.length;   -wait for Beam's Length
                 }
 
+                #endregion Beam Input
+
                 #region Slab Input
 
-                var slabData = File.ReadAllText(@"..\..\Data\MockSlab.json");
+                string slabData = File.ReadAllText(@"..\..\Data\MockSlab.json");
                 ICollection<WhSlab> whSlabList = JsonConvert.DeserializeObject<ICollection<WhSlab>>(slabData);
                 foreach (WhSlab slabDetail in whSlabList)
                 {
@@ -88,10 +113,25 @@ namespace REVIT_IMPORT
                     }
                     ContourPlate slab = slabCreate(slabThickness, projectMaterial, slabPointBoundaryList);
 
-                    createPartCutSlab(model, slab);
+                    createPartCutWithBeam(model, slab);
                 }
 
                 #endregion Slab Input
+
+                #region Wall Input
+
+                //string wallData = File.ReadAllText(@"..\..\Data\MockWall.json");
+                Point wallSP = new Point(-1872.42, 6252.39, -225.00);
+                Point wallEP = new Point(-1872.42, 8122.39, -225.00);
+                Beam wall = createWall("PANEL", "2985", "90", wallSP, wallEP);
+                createPartCutWithBeam(model, wall);
+                /*
+                 * In future I want to just check 1 or 2 beams relate to wall, not loop through all beam
+                 */
+
+                #endregion Wall Input
+
+                #region Old Input
 
                 /*Issue: ko chắc về cao độ dưới của dầm. Thông thường sẽ là -225 so với FFL nhưng sẽ thay đổi
                  * nếu Beam Height !== 205
@@ -176,41 +216,9 @@ namespace REVIT_IMPORT
                 //Create List of hashtable. Each hashtable contain a slab's info
                 List<Hashtable> slabs = new List<Hashtable>() { slab1, slab2 };
 
+                #endregion Old Input
+
                 #endregion Input
-
-                //beamCreate(botBeamName, botBeamProfile, projectMaterial, botBeamSP, botBeamEP);
-                //beamCreate(topBeamName, topBeamProfile, projectMaterial, _topBeamSP, _topBeamEP);
-                //beamCreate(leftBeamName, leftBeamProfile, projectMaterial, _leftBeamSP, _leftBeamEP);
-                //beamCreate(rightBeamName, rightBeamProfile, projectMaterial, _rightBeamSP, _rightBeamEP);
-
-                //Create multi slabs
-                //foreach (Hashtable slab in slabs)
-                //{
-                //    string slabThickness = (string)slab["thickness"];
-                //    List<Point> slabPointsList = (List<Point>)slab["pointsList"];
-                //    slabCreate(slabThickness, projectMaterial, slabPointsList);
-                //}
-                //Check intersection between slab and Beam
-#warning double check cut part method
-                //ModelObjectEnumerator slabEnum = model.GetModelObjectSelector().GetAllObjectsWithType(ModelObject.ModelObjectEnum.CONTOURPLATE);
-                //while (slabEnum.MoveNext())
-                //{
-                //    ContourPlate slab = slabEnum.Current as ContourPlate;
-                //    Solid slabSolid = slab.GetSolid();
-                //    ModelObjectEnumerator beamEnum = model.GetModelObjectSelector().GetAllObjectsWithType(ModelObject.ModelObjectEnum.BEAM);
-                //while (beamEnum.MoveNext())
-                //{
-                //BooleanPart cut = new BooleanPart();
-                //Missing class. check sau
-                //cut.Father = beamEnum.Current;
-                //cut.SetOperativePart(slab);
-                //if (!cut.Insert())
-                //{
-                //    MessageBox.Show("Inter failed");
-                //}
-                //slab.Delete();
-                //}
-                //}
 
                 model.CommitChanges();
             }
@@ -220,7 +228,8 @@ namespace REVIT_IMPORT
             }
         }
 
-        private static Beam beamCreate(string beamName, string beamHeight, string beamWidth, string beamMark, string beamMaterial, TSG.Point beamSP, TSG.Point beamEP)
+        private static Beam beamCreate(string beamName, string beamHeight, string beamWidth, string beamMark, string beamMaterial,
+            TSG.Point beamSP, TSG.Point beamEP, string moduleArea, Point centerPoint)
         {
             Beam beam = new Beam(Beam.BeamTypeEnum.BEAM);
             beam.Name = beamName;
@@ -230,8 +239,69 @@ namespace REVIT_IMPORT
             beam.StartPoint = beamSP;
             beam.EndPoint = beamEP;
             beam.Insert();
+
+            #region check beam's orientation
+
+            double gapX = beamSP.X - beamEP.X;
+            double gapY = beamSP.Y - beamEP.Y;
+            bool isGapXExist = true;
+            bool isGapYExist = true;
+            string beamOrientation = null;
+            string beamPosition = null;
+
+            if (gapX >= 0.0 && gapX < 1.0)
+            {
+                isGapXExist = false;
+            }
+
+            if (gapY >= 0.0 && gapY < 1.0)
+            {
+                isGapYExist = false;
+            }
+
+            if (isGapXExist)
+            {
+                beamOrientation = "hor";
+            }
+
+            if (isGapYExist)
+            {
+                beamOrientation = "ver";
+            }
+
+            switch (beamOrientation)
+            {
+                case "hor":
+                    if (beamSP.Y > centerPoint.Y)
+                    {
+                        beamPosition = "top";
+                    }
+                    else
+                    {
+                        beamPosition = "bottom";
+                    }
+                    break;
+
+                case "ver":
+                    if (beamSP.X > centerPoint.X)
+                    {
+                        beamPosition = "right";
+                    }
+                    else
+                    {
+                        beamPosition = "left";
+                    }
+                    break;
+
+                default:
+                    break;
+            }
+            beam.SetUserProperty("comment", beamPosition);
+
+            #endregion check beam's orientation
+
             beam.SetUserProperty("USER_FIELD_2", beamMark);
-            Console.WriteLine("created!");
+            Console.WriteLine("beam is created!");
             return beam;
         }
 
@@ -291,28 +361,28 @@ namespace REVIT_IMPORT
             beamPC.Delete();
         }
 
-        private static void createSlabPartCut(ContourPlate slab, Beam beam)
+        private static void createPartCutIntersection(Part partToBeCut, Part partShapeCut)
         {
-            string tempBeamClass = beam.Class;
-            beam.Class = BooleanPart.BooleanOperativeClassName;
+            string tempBeamClass = partShapeCut.Class;
+            partShapeCut.Class = BooleanPart.BooleanOperativeClassName;
             BooleanPart booleanPart = new BooleanPart();
-            booleanPart.Father = slab;
-            booleanPart.SetOperativePart(beam);
+            booleanPart.Father = partToBeCut;
+            booleanPart.SetOperativePart(partShapeCut);
             booleanPart.Insert();
-            beam.Class = tempBeamClass;
+            partShapeCut.Class = tempBeamClass;
         }
 
-        private static void createPartCutSlab(Model model, ContourPlate slab)
+        private static void createPartCutWithBeam(Model model, Part partToBeCut)
         {
             ModelObjectEnumerator beamEnum = model.GetModelObjectSelector().GetAllObjectsWithType(ModelObject.ModelObjectEnum.BEAM);
-            OBB slabObb = createOBB(model, slab);
+            OBB partToBeCutObb = createOBB(model, partToBeCut);
             while (beamEnum.MoveNext())
             {
                 Beam beam = beamEnum.Current as Beam;
                 OBB beamObb = createOBB(model, beam);
-                if (slabObb.Intersects(beamObb))
+                if (partToBeCutObb.Intersects(beamObb))
                 {
-                    createSlabPartCut(slab, beam);
+                    createPartCutIntersection(partToBeCut, beam);
                 }
             }
         }
@@ -369,6 +439,44 @@ namespace REVIT_IMPORT
                 slabsList.Add(slabEnum.Current as ContourPlate);
             }
             return slabsList;
+        }
+
+        private static Beam createWall(string wallName, string wallHeight, string wallThickness, Point wallSP, Point wallEP)
+        {
+            Beam wall = new Beam(Beam.BeamTypeEnum.PANEL);
+            wall.Name = wallName;
+            wall.Profile.ProfileString = $"{wallHeight}*{wallThickness}";
+            wall.Material.MaterialString = projectMaterial;
+            wall.StartPoint = wallSP;
+            wall.EndPoint = wallEP;
+            if (wall.Name == "PANEL")
+            {
+                wall.Class = "1";
+            }
+            else
+            {
+                wall.Class = "5";
+            }
+            wall.Position.Depth = Position.DepthEnum.FRONT;
+            wall.Insert();
+            return wall;
+        }
+
+        private static TSG.Point CreateCenterPoint(List<TSG.Point> pointList)
+        {
+            double XPoint = 0;
+            double YPoint = 0;
+            pointList.ForEach(point =>
+            {
+                XPoint += point.X;
+                YPoint += point.Y;
+            });
+            TSG.Point centerPoint =
+                new TSG.Point(XPoint / pointList.Count, YPoint / pointList.Count, 500.0);
+
+            ControlPoint controlPoint = new ControlPoint(centerPoint);
+            controlPoint.Insert();
+            return centerPoint;
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -450,6 +558,11 @@ namespace REVIT_IMPORT
             }
 
             model.CommitChanges();
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            cboModuleArea.SelectedIndex = 1;
         }
     }
 }
