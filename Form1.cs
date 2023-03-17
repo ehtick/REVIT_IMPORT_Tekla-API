@@ -18,6 +18,7 @@ using Tekla.Structures.Solid;
 using WHExtensionElement;
 using System.Runtime.Remoting.Messaging;
 using System.Reflection;
+using System.Linq;
 
 namespace REVIT_IMPORT
 {
@@ -80,6 +81,7 @@ namespace REVIT_IMPORT
                 {
                     Point beamSP = new Point(beamDetail.StartPoint.X, beamDetail.StartPoint.Y, beamDetail.StartPoint.Z + Convert.ToDouble(beamDetail.h) / 2 - 29500.00);
                     Point beamEP = new Point(beamDetail.EndPoint.X, beamDetail.EndPoint.Y, beamDetail.EndPoint.Z + Convert.ToDouble(beamDetail.h) / 2 - 29500.00);
+                    Beam beamMain = beamCreate(beamDetail.name, beamDetail.h, beamDetail.b, beamDetail.type, projectMaterial, beamSP, beamEP, moduleArea, centerPoint);
 
                     /*
                      * Truong hop can xu ly Z axis
@@ -87,8 +89,38 @@ namespace REVIT_IMPORT
                     Point beamSP = new Point(beamDetail.StartPoint.X, beamDetail.StartPoint.Y, beamTopLevel);
                     Point beamEP = new Point(beamDetail.EndPoint.X, beamDetail.EndPoint.Y, beamTopLevel);
                     */
+                    if (beamDetail.DropPoint != null)
+                    {
+                        //deconstruction tuple
+                        (WhPoint whPoint1, WhPoint whPoint2, WhPoint whPoint3, WhPoint whPoint4) = beamDetail.DropPoint;
+                        Point point1 = new Point(whPoint1.X, whPoint1.Y, whPoint1.Z - 29500.0);
+                        Point point2 = new Point(whPoint2.X, whPoint2.Y, whPoint2.Z - 29500.0);
+                        Point point3 = new Point(whPoint3.X, whPoint3.Y, whPoint3.Z - 29500.0);
+                        Point point4 = new Point(whPoint4.X, whPoint4.Y, whPoint4.Z - 29500.0);
+                        ControlPoint controlPoint1 = new ControlPoint(point1);
+                        ControlPoint controlPoint2 = new ControlPoint(point2);
+                        ControlPoint controlPoint3 = new ControlPoint(point3);
+                        ControlPoint controlPoint4 = new ControlPoint(point4);
+                        controlPoint1.Insert();
+                        controlPoint2.Insert();
+                        controlPoint3.Insert();
+                        controlPoint4.Insert();
 
-                    Beam beamMain = beamCreate(beamDetail.name, beamDetail.h, beamDetail.b, beamDetail.type, projectMaterial, beamSP, beamEP, moduleArea, centerPoint);
+                        #region find dropBeamShape profile
+
+                        List<double> dropPointZ = new List<double>() { point1.Z, point2.Z, point3.Z, point4.Z };
+                        double dropHeight = dropPointZ.Max() - dropPointZ.Min();
+                        List<double> dropPointX = new List<double>() { point1.X, point2.X, point3.X, point4.X };
+                        double dropWidthX = dropPointX.Max() - dropPointX.Min();
+                        List<double> dropPointY = new List<double>() { point1.Y, point2.Y, point3.Y, point4.Y };
+                        double dropWidthY = dropPointY.Max() - dropPointY.Min();
+                        //Xac dinh beam's orientation roi tao profile beam drop
+                        string beamPosition2 = null;
+                        beamMain.GetUserProperty("comment", ref beamPosition2);
+
+                        #endregion find dropBeamShape profile
+                    }
+
                     Point beamPCStartPoint = new Point(-1927.42, 3252.39, -20);
                     Point beamPCEndPoint = new Point(-1927.42, 4382.39, -20);
                     createBeamPartCut(beamMain, 60.0, 200.0, beamPCStartPoint, beamPCEndPoint);
@@ -100,7 +132,8 @@ namespace REVIT_IMPORT
 
                 #region Slab Input
 
-                string slabData = File.ReadAllText(@"..\..\Data\MockSlab.json");
+                /*
+                string slabData = File.ReadAllText(@"..\..\Data\Slab.json");
                 ICollection<WhSlab> whSlabList = JsonConvert.DeserializeObject<ICollection<WhSlab>>(slabData);
                 foreach (WhSlab slabDetail in whSlabList)
                 {
@@ -115,16 +148,35 @@ namespace REVIT_IMPORT
 
                     createPartCutWithBeam(model, slab);
                 }
+                */
 
                 #endregion Slab Input
 
                 #region Wall Input
 
-                //string wallData = File.ReadAllText(@"..\..\Data\MockWall.json");
-                Point wallSP = new Point(-1872.42, 6252.39, -225.00);
-                Point wallEP = new Point(-1872.42, 8122.39, -225.00);
-                Beam wall = createWall("PANEL", "2985", "90", wallSP, wallEP);
-                createPartCutWithBeam(model, wall);
+                /*
+                string wallData = File.ReadAllText(@"..\..\Data\Wall.json");
+                ICollection<WhWall> whWallList = JsonConvert.DeserializeObject<ICollection<WhWall>>(slabData);
+
+                foreach (WhWall wallDetail in whWallList)
+                {
+                    if (wallDetail.WhCurve == null)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        var wallSP = wallDetail.WhCurve.CurvePoint[0];
+                        var wallEP = wallDetail.WhCurve.CurvePoint[1];
+
+                        Point _wallSP = new Point(wallSP.X, wallSP.Y, wallSP.Z);
+                        Point _wallEP = new Point(wallEP.X, wallEP.Y, wallEP.Z);
+
+                        Beam wall = createWall("PANEL", "2985", wallDetail.ThickNess.ToString(), _wallSP, _wallEP);
+                        createPartCutWithBeam(model, wall);
+                    }
+                }
+
                 /*
                  * In future I want to just check 1 or 2 beams relate to wall, not loop through all beam
                  */
@@ -301,7 +353,6 @@ namespace REVIT_IMPORT
             #endregion check beam's orientation
 
             beam.SetUserProperty("USER_FIELD_2", beamMark);
-            Console.WriteLine("beam is created!");
             return beam;
         }
 
