@@ -51,7 +51,7 @@ namespace REVIT_IMPORT
                 #region Beam Input
 
                 /*
-                string beamData = File.ReadAllText(@"..\..\Data\MockBeam.json");
+                string beamData = File.ReadAllText(@"..\..\Data\Beam.json");
                 ICollection<WhBeam> whBeamList = JsonConvert.DeserializeObject<ICollection<WhBeam>>(beamData);
 
                 #region Create Center Point of module
@@ -81,79 +81,78 @@ namespace REVIT_IMPORT
                     Point beamSP = new Point(beamDetail.StartPoint.X, beamDetail.StartPoint.Y, beamTopLevel);
                     Point beamEP = new Point(beamDetail.EndPoint.X, beamDetail.EndPoint.Y, beamTopLevel);
 
-                if (beamDetail.DropPoint != null)
-                {
-                    //deconstruction tuple
-                    (WhPoint whPoint1, WhPoint whPoint2, WhPoint whPoint3, WhPoint whPoint4) = beamDetail.DropPoint;
-                    Point point1 = new Point(whPoint1.X, whPoint1.Y, whPoint1.Z - 29500.0);
-                    Point point2 = new Point(whPoint2.X, whPoint2.Y, whPoint2.Z - 29500.0);
-                    Point point3 = new Point(whPoint3.X, whPoint3.Y, whPoint3.Z - 29500.0);
-                    Point point4 = new Point(whPoint4.X, whPoint4.Y, whPoint4.Z - 29500.0);
-                    ControlPoint controlPoint1 = new ControlPoint(point1);
-                    ControlPoint controlPoint2 = new ControlPoint(point2);
-                    ControlPoint controlPoint3 = new ControlPoint(point3);
-                    ControlPoint controlPoint4 = new ControlPoint(point4);
-                    controlPoint1.Insert();
-                    controlPoint2.Insert();
-                    controlPoint3.Insert();
-                    controlPoint4.Insert();
+                    if (beamDetail.DropPoint != null)
+                    {
+                        //deconstruction tuple
+                        (WhPoint whPoint1, WhPoint whPoint2, WhPoint whPoint3, WhPoint whPoint4) = beamDetail.DropPoint;
+                        Point point1 = new Point(whPoint1.X, whPoint1.Y, whPoint1.Z - 29500.0);
+                        Point point2 = new Point(whPoint2.X, whPoint2.Y, whPoint2.Z - 29500.0);
+                        Point point3 = new Point(whPoint3.X, whPoint3.Y, whPoint3.Z - 29500.0);
+                        Point point4 = new Point(whPoint4.X, whPoint4.Y, whPoint4.Z - 29500.0);
+                        ControlPoint controlPoint1 = new ControlPoint(point1);
+                        ControlPoint controlPoint2 = new ControlPoint(point2);
+                        ControlPoint controlPoint3 = new ControlPoint(point3);
+                        ControlPoint controlPoint4 = new ControlPoint(point4);
+                        controlPoint1.Insert();
+                        controlPoint2.Insert();
+                        controlPoint3.Insert();
+                        controlPoint4.Insert();
 
-                    #region find dropBeamShape profile
+                        #region find dropBeamShape profile
 
-                    List<double> dropPointZ = new List<double>() { point1.Z, point2.Z, point3.Z, point4.Z };
-                    double dropHeight = dropPointZ.Max() - dropPointZ.Min();
-                    List<double> dropPointX = new List<double>() { point1.X, point2.X, point3.X, point4.X };
-                    double centerPointX = (dropPointX.Max() + dropPointX.Min()) / 2;
-                    List<double> dropPointY = new List<double>() { point1.Y, point2.Y, point3.Y, point4.Y };
-                    double centerPointY = (dropPointY.Max() + dropPointY.Min()) / 2;
-                    //Xac dinh beam's orientation roi tao profile beam drop
-                    //Tim centerPoint cua drop
-                    double totalX = 0;
-                    dropPointX.ForEach(pointX => totalX += pointX);
-                    double averageX = totalX / dropPointX.Count;
-                    double gapX = 0;
-                    dropPointX.ForEach(pointX =>
-                    {
-                        gapX = Math.Abs(pointX - averageX);
-                    });
-                    string beamPosition = null;
-                    beamMain.GetUserProperty("comment", ref beamPosition);
-                    Point dropSP = new Point(centerPointX, centerPointY, dropPointZ.Max());
-                    bool isDropAtSP = false;
-                    if (beamPosition == "top" || beamPosition == "bottom")
-                    {
-                        double gapXFromDropToSP = Math.Abs(averageX - beamSP.X);
-                        double gapXFromDropToEP = Math.Abs(averageX - beamEP.X);
-                        isDropAtSP = gapXFromDropToSP < gapXFromDropToEP;
-                    }
-                    else if (beamPosition == "left" || beamPosition == "right")
-                    {
-                        double gapYFromDropToSP = Math.Abs(centerPointY - beamSP.Y);
-                        double gapYFromDropToEP = Math.Abs(centerPointY - beamEP.Y);
-                        isDropAtSP = gapYFromDropToSP < gapYFromDropToEP;
-                    }
-                    Point dropEP;
-                    if (isDropAtSP)
-                    {
-                        dropEP = beamSP;
-                    }
-                    else
-                    {
-                        dropEP = beamEP;
-                    }
-                    //Mock drop point
-                    Point beamPCStartPoint = new Point(-1927.42, 3252.39, -20);
-                    Point beamPCEndPoint = new Point(-1927.42, 4382.39, -20);
-                    createBeamPartCut(beamMain, dropHeight, beamDetail.b, dropSP, dropEP);
+                        List<double> dropPointZ = new List<double>() { point1.Z, point2.Z, point3.Z, point4.Z };
+                        double dropHeight = dropPointZ.Max() - dropPointZ.Min();
+                        List<double> dropPointX = new List<double>() { point1.X, point2.X, point3.X, point4.X };
+                        double centerPointX = (dropPointX.Max() + dropPointX.Min()) / 2;
+                        List<double> dropPointY = new List<double>() { point1.Y, point2.Y, point3.Y, point4.Y };
+                        double centerPointY = (dropPointY.Max() + dropPointY.Min()) / 2;
+                        //Xac dinh beam's orientation roi tao profile beam drop
+                        //Tim centerPoint cua drop
+                        double totalX = 0;
+                        dropPointX.ForEach(pointX => totalX += pointX);
+                        double averageX = totalX / dropPointX.Count;
+                        double gapX = 0;
+                        dropPointX.ForEach(pointX =>
+                        {
+                            gapX = Math.Abs(pointX - averageX);
+                        });
+                        string beamPosition = null;
+                        beamMain.GetUserProperty("comment", ref beamPosition);
+                        Point dropSP = new Point(centerPointX, centerPointY, dropPointZ.Max());
+                        bool isDropAtSP = false;
+                        if (beamPosition == "top" || beamPosition == "bottom")
+                        {
+                            double gapXFromDropToSP = Math.Abs(averageX - beamSP.X);
+                            double gapXFromDropToEP = Math.Abs(averageX - beamEP.X);
+                            isDropAtSP = gapXFromDropToSP < gapXFromDropToEP;
+                        }
+                        else if (beamPosition == "left" || beamPosition == "right")
+                        {
+                            double gapYFromDropToSP = Math.Abs(centerPointY - beamSP.Y);
+                            double gapYFromDropToEP = Math.Abs(centerPointY - beamEP.Y);
+                            isDropAtSP = gapYFromDropToSP < gapYFromDropToEP;
+                        }
+                        Point dropEP;
+                        if (isDropAtSP)
+                        {
+                            dropEP = beamSP;
+                        }
+                        else
+                        {
+                            dropEP = beamEP;
+                        }
+                        //Mock drop point
+                        Point beamPCStartPoint = new Point(-1927.42, 3252.39, -20);
+                        Point beamPCEndPoint = new Point(-1927.42, 4382.39, -20);
+                        createBeamPartCut(beamMain, dropHeight, beamDetail.b, dropSP, dropEP);
 
-                    #endregion find dropBeamShape profile
+                        #endregion find dropBeamShape profile
 
-                    model.CommitChanges();
+                        model.CommitChanges();
+                    }
+
+                    //string beamLength = beamDetail.length;   -wait for Beam's Length
                 }
-
-                //string beamLength = beamDetail.length;   -wait for Beam's Length
-            }
-
             */
 
                 #endregion Beam Input
@@ -183,6 +182,7 @@ namespace REVIT_IMPORT
 
                 #region Wall Input
 
+                Point centerPoint = new Point(3479.80, -1016.00, 500.0);
                 string wallData = File.ReadAllText(@"..\..\Data\Wall.json");
                 ICollection<WhWall> whWallList = JsonConvert.DeserializeObject<ICollection<WhWall>>(wallData);
 
@@ -200,8 +200,13 @@ namespace REVIT_IMPORT
                         Point _wallSP = new Point(wallSP.X, wallSP.Y, wallSP.Z - 29500.0);
                         Point _wallEP = new Point(wallEP.X, wallEP.Y, wallEP.Z - 29500.0);
                         double wallHeight = Convert.ToDouble(wallDetail.LevelTop) - Convert.ToDouble(wallDetail.LevelBot);
+                        bool isRecess = true;
                         Beam wall = createWall("PANEL", wallHeight.ToString(), wallDetail.ThickNess.ToString(), _wallSP, _wallEP);
-                        createPartCutWithBeam(model, wall);
+                        model.CommitChanges();
+                        string wallPosition = checkPartOrientation(wall, _wallSP, _wallEP, centerPoint);
+                        wall.SetUserProperty("comment", wallPosition);
+                        //createPartCutWithBeam(model, wall);
+                        createRecess(wall, wallHeight, wallPosition, wallDetail.ThickNess, _wallSP);
                     }
                 }
 
@@ -230,67 +235,10 @@ namespace REVIT_IMPORT
             beam.Class = "6";
             beam.StartPoint = beamSP;
             beam.EndPoint = beamEP;
-            beam.Insert();
+            //beam.Insert();
 
-            #region check beam's orientation
-
-            double gapX = beamSP.X - beamEP.X;
-            double gapY = beamSP.Y - beamEP.Y;
-            bool isGapXExist = true;
-            bool isGapYExist = true;
-            string beamOrientation = null;
-            string beamPosition = null;
-
-            if (gapX >= 0.0 && gapX < 1.0)
-            {
-                isGapXExist = false;
-            }
-
-            if (gapY >= 0.0 && gapY < 1.0)
-            {
-                isGapYExist = false;
-            }
-
-            if (isGapXExist)
-            {
-                beamOrientation = "hor";
-            }
-
-            if (isGapYExist)
-            {
-                beamOrientation = "ver";
-            }
-
-            switch (beamOrientation)
-            {
-                case "hor":
-                    if (beamSP.Y > centerPoint.Y)
-                    {
-                        beamPosition = "top";
-                    }
-                    else
-                    {
-                        beamPosition = "bottom";
-                    }
-                    break;
-
-                case "ver":
-                    if (beamSP.X > centerPoint.X)
-                    {
-                        beamPosition = "right";
-                    }
-                    else
-                    {
-                        beamPosition = "left";
-                    }
-                    break;
-
-                default:
-                    break;
-            }
+            string beamPosition = checkPartOrientation(beam, beamSP, beamEP, centerPoint);
             beam.SetUserProperty("comment", beamPosition);
-
-            #endregion check beam's orientation
 
             beam.SetUserProperty("USER_FIELD_2", beamMark);
             return beam;
@@ -353,7 +301,7 @@ namespace REVIT_IMPORT
             //beamPC.Delete();
         }
 
-        private static void createPartCutIntersection(Part partToBeCut, Part partShapeCut)
+        private static BooleanPart createPartCutIntersection(Part partToBeCut, Part partShapeCut)
         {
             string tempBeamClass = partShapeCut.Class;
             partShapeCut.Class = BooleanPart.BooleanOperativeClassName;
@@ -362,6 +310,7 @@ namespace REVIT_IMPORT
             booleanPart.SetOperativePart(partShapeCut);
             booleanPart.Insert();
             partShapeCut.Class = tempBeamClass;
+            return booleanPart;
         }
 
         private static void createPartCutWithBeam(Model model, Part partToBeCut)
@@ -469,6 +418,118 @@ namespace REVIT_IMPORT
             ControlPoint controlPoint = new ControlPoint(centerPoint);
             controlPoint.Insert();
             return centerPoint;
+        }
+
+        private static string checkPartOrientation(Part part, Point partSP, Point partEP, Point centerPoint)
+        {
+            double gapX = Math.Abs(partSP.X - partEP.X);
+            double gapY = Math.Abs(partSP.Y - partEP.Y);
+            bool isHor = false;
+            bool isVer = false;
+            string partOrientation = null;
+            string partPosition = null;
+
+            if (gapX >= 0.0 && gapX < 1.0)
+            {
+                isVer = true;
+            }
+
+            if (gapY >= 0.0 && gapY < 1.0)
+            {
+                isHor = true;
+            }
+
+            if (isVer)
+            {
+                partOrientation = "ver";
+            }
+
+            if (isHor)
+            {
+                partOrientation = "hor";
+            }
+
+            switch (partOrientation)
+            {
+                case "hor":
+                    if (partSP.Y > centerPoint.Y)
+                    {
+                        partPosition = "top";
+                    }
+                    else
+                    {
+                        partPosition = "bottom";
+                    }
+                    break;
+
+                case "ver":
+                    if (partSP.X > centerPoint.X)
+                    {
+                        partPosition = "right";
+                    }
+                    else
+                    {
+                        partPosition = "left";
+                    }
+                    break;
+
+                default:
+                    break;
+            }
+            return partPosition;
+        }
+
+        private static void createRecess(Beam wall, double wallHeight, string wallPosition, double wallThickness, Point _wallSP)
+        {
+            Beam wallRecess = new Beam(Beam.BeamTypeEnum.BEAM);
+            wallRecess.Profile.ProfileString = "TRI_E200*30*0*15";
+            wallRecess.Class = "6";
+            //Point recessSP = null;
+            //Point recessEP = null;
+
+            Point recessSP = new Point(_wallSP.X - 175.0, _wallSP.Y + wallThickness / 2, _wallSP.Z);
+            Point recessEP = new Point(recessSP.X, recessSP.Y, recessSP.Z + wallHeight);
+            switch (wallPosition)
+            {
+                case "top":
+                    wallRecess.Position.Rotation = Position.RotationEnum.BACK;
+                    wallRecess.Position.Plane = Position.PlaneEnum.RIGHT;
+                    wallRecess.Position.Depth = Position.DepthEnum.MIDDLE;
+                    recessSP = new Point(_wallSP.X - 175.0, _wallSP.Y + wallThickness / 2, _wallSP.Z);
+                    recessEP = new Point(recessSP.X, recessSP.Y, recessSP.Z + wallHeight);
+                    break;
+
+                case "bottom":
+                    wallRecess.Position.Rotation = Position.RotationEnum.FRONT;
+                    wallRecess.Position.Plane = Position.PlaneEnum.LEFT;
+                    wallRecess.Position.Depth = Position.DepthEnum.MIDDLE;
+                    recessSP = new Point(_wallSP.X - 175.0, _wallSP.Y - wallThickness / 2, _wallSP.Z);
+                    recessEP = new Point(recessSP.X, recessSP.Y, recessSP.Z + wallHeight);
+                    break;
+
+                case "left":
+                    wallRecess.Position.Rotation = Position.RotationEnum.BELOW;
+                    wallRecess.Position.Plane = Position.PlaneEnum.MIDDLE;
+                    wallRecess.Position.Depth = Position.DepthEnum.BEHIND;
+                    recessSP = new Point(_wallSP.X - wallThickness / 2, _wallSP.Y, _wallSP.Z);
+                    recessEP = new Point(recessSP.X, recessSP.Y, recessSP.Z + wallHeight);
+                    break;
+
+                case "right":
+                    wallRecess.Position.Rotation = Position.RotationEnum.TOP;
+                    wallRecess.Position.Plane = Position.PlaneEnum.MIDDLE;
+                    wallRecess.Position.Depth = Position.DepthEnum.FRONT;
+                    recessSP = new Point(_wallSP.X + wallThickness / 2, _wallSP.Y, _wallSP.Z);
+                    recessEP = new Point(recessSP.X, recessSP.Y, recessSP.Z + wallHeight);
+                    break;
+            }
+
+            wallRecess.StartPoint = recessSP;
+            wallRecess.EndPoint = recessEP;
+            wallRecess.Insert();
+            BooleanPart wallRecessCut = createPartCutIntersection(wall, wallRecess);
+            wallRecess.Delete();
+            //Tìm cách copy nữa là xong
         }
 
         private void button1_Click(object sender, EventArgs e)
