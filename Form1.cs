@@ -1,24 +1,15 @@
-﻿using System;
-using System.Windows.Forms;
-using Tekla.Structures;
-using Tekla.Structures.Model;
-using Tekla.Structures.Model.UI;
-using Tekla.Structures.Geometry3d;
-using Tekla.Structures.Model.Operations;
-
-using TSM = Tekla.Structures.Model;
-using TSMUI = Tekla.Structures.Model.UI;
-using TSG = Tekla.Structures.Geometry3d;
-
-using Newtonsoft.Json;
-using System.IO;
-using System.Collections.Generic;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections;
-using Tekla.Structures.Solid;
-using WHExtensionElement;
-using System.Runtime.Remoting.Messaging;
-using System.Reflection;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Windows.Forms;
+using Tekla.Structures.Geometry3d;
+using Tekla.Structures.Model;
+using WHExtensionElement;
+
+using TSG = Tekla.Structures.Geometry3d;
 
 namespace REVIT_IMPORT
 {
@@ -59,7 +50,8 @@ namespace REVIT_IMPORT
 
                 #region Beam Input
 
-                string beamData = File.ReadAllText(@"..\..\Data\Beam.json");
+                /*
+                string beamData = File.ReadAllText(@"..\..\Data\MockBeam.json");
                 ICollection<WhBeam> whBeamList = JsonConvert.DeserializeObject<ICollection<WhBeam>>(beamData);
 
                 #region Create Center Point of module
@@ -88,45 +80,81 @@ namespace REVIT_IMPORT
                     double beamTopLevel = createZValue(Convert.ToDouble(beamDetail.h));
                     Point beamSP = new Point(beamDetail.StartPoint.X, beamDetail.StartPoint.Y, beamTopLevel);
                     Point beamEP = new Point(beamDetail.EndPoint.X, beamDetail.EndPoint.Y, beamTopLevel);
-                    */
-                    if (beamDetail.DropPoint != null)
+
+                if (beamDetail.DropPoint != null)
+                {
+                    //deconstruction tuple
+                    (WhPoint whPoint1, WhPoint whPoint2, WhPoint whPoint3, WhPoint whPoint4) = beamDetail.DropPoint;
+                    Point point1 = new Point(whPoint1.X, whPoint1.Y, whPoint1.Z - 29500.0);
+                    Point point2 = new Point(whPoint2.X, whPoint2.Y, whPoint2.Z - 29500.0);
+                    Point point3 = new Point(whPoint3.X, whPoint3.Y, whPoint3.Z - 29500.0);
+                    Point point4 = new Point(whPoint4.X, whPoint4.Y, whPoint4.Z - 29500.0);
+                    ControlPoint controlPoint1 = new ControlPoint(point1);
+                    ControlPoint controlPoint2 = new ControlPoint(point2);
+                    ControlPoint controlPoint3 = new ControlPoint(point3);
+                    ControlPoint controlPoint4 = new ControlPoint(point4);
+                    controlPoint1.Insert();
+                    controlPoint2.Insert();
+                    controlPoint3.Insert();
+                    controlPoint4.Insert();
+
+                    #region find dropBeamShape profile
+
+                    List<double> dropPointZ = new List<double>() { point1.Z, point2.Z, point3.Z, point4.Z };
+                    double dropHeight = dropPointZ.Max() - dropPointZ.Min();
+                    List<double> dropPointX = new List<double>() { point1.X, point2.X, point3.X, point4.X };
+                    double centerPointX = (dropPointX.Max() + dropPointX.Min()) / 2;
+                    List<double> dropPointY = new List<double>() { point1.Y, point2.Y, point3.Y, point4.Y };
+                    double centerPointY = (dropPointY.Max() + dropPointY.Min()) / 2;
+                    //Xac dinh beam's orientation roi tao profile beam drop
+                    //Tim centerPoint cua drop
+                    double totalX = 0;
+                    dropPointX.ForEach(pointX => totalX += pointX);
+                    double averageX = totalX / dropPointX.Count;
+                    double gapX = 0;
+                    dropPointX.ForEach(pointX =>
                     {
-                        //deconstruction tuple
-                        (WhPoint whPoint1, WhPoint whPoint2, WhPoint whPoint3, WhPoint whPoint4) = beamDetail.DropPoint;
-                        Point point1 = new Point(whPoint1.X, whPoint1.Y, whPoint1.Z - 29500.0);
-                        Point point2 = new Point(whPoint2.X, whPoint2.Y, whPoint2.Z - 29500.0);
-                        Point point3 = new Point(whPoint3.X, whPoint3.Y, whPoint3.Z - 29500.0);
-                        Point point4 = new Point(whPoint4.X, whPoint4.Y, whPoint4.Z - 29500.0);
-                        ControlPoint controlPoint1 = new ControlPoint(point1);
-                        ControlPoint controlPoint2 = new ControlPoint(point2);
-                        ControlPoint controlPoint3 = new ControlPoint(point3);
-                        ControlPoint controlPoint4 = new ControlPoint(point4);
-                        controlPoint1.Insert();
-                        controlPoint2.Insert();
-                        controlPoint3.Insert();
-                        controlPoint4.Insert();
-
-                        #region find dropBeamShape profile
-
-                        List<double> dropPointZ = new List<double>() { point1.Z, point2.Z, point3.Z, point4.Z };
-                        double dropHeight = dropPointZ.Max() - dropPointZ.Min();
-                        List<double> dropPointX = new List<double>() { point1.X, point2.X, point3.X, point4.X };
-                        double dropWidthX = dropPointX.Max() - dropPointX.Min();
-                        List<double> dropPointY = new List<double>() { point1.Y, point2.Y, point3.Y, point4.Y };
-                        double dropWidthY = dropPointY.Max() - dropPointY.Min();
-                        //Xac dinh beam's orientation roi tao profile beam drop
-                        string beamPosition2 = null;
-                        beamMain.GetUserProperty("comment", ref beamPosition2);
-
-                        #endregion find dropBeamShape profile
+                        gapX = Math.Abs(pointX - averageX);
+                    });
+                    string beamPosition = null;
+                    beamMain.GetUserProperty("comment", ref beamPosition);
+                    Point dropSP = new Point(centerPointX, centerPointY, dropPointZ.Max());
+                    bool isDropAtSP = false;
+                    if (beamPosition == "top" || beamPosition == "bottom")
+                    {
+                        double gapXFromDropToSP = Math.Abs(averageX - beamSP.X);
+                        double gapXFromDropToEP = Math.Abs(averageX - beamEP.X);
+                        isDropAtSP = gapXFromDropToSP < gapXFromDropToEP;
                     }
-
+                    else if (beamPosition == "left" || beamPosition == "right")
+                    {
+                        double gapYFromDropToSP = Math.Abs(centerPointY - beamSP.Y);
+                        double gapYFromDropToEP = Math.Abs(centerPointY - beamEP.Y);
+                        isDropAtSP = gapYFromDropToSP < gapYFromDropToEP;
+                    }
+                    Point dropEP;
+                    if (isDropAtSP)
+                    {
+                        dropEP = beamSP;
+                    }
+                    else
+                    {
+                        dropEP = beamEP;
+                    }
+                    //Mock drop point
                     Point beamPCStartPoint = new Point(-1927.42, 3252.39, -20);
                     Point beamPCEndPoint = new Point(-1927.42, 4382.39, -20);
-                    createBeamPartCut(beamMain, 60.0, 200.0, beamPCStartPoint, beamPCEndPoint);
+                    createBeamPartCut(beamMain, dropHeight, beamDetail.b, dropSP, dropEP);
 
-                    //string beamLength = beamDetail.length;   -wait for Beam's Length
+                    #endregion find dropBeamShape profile
+
+                    model.CommitChanges();
                 }
+
+                //string beamLength = beamDetail.length;   -wait for Beam's Length
+            }
+
+            */
 
                 #endregion Beam Input
 
@@ -148,15 +176,15 @@ namespace REVIT_IMPORT
 
                     createPartCutWithBeam(model, slab);
                 }
+
                 */
 
                 #endregion Slab Input
 
                 #region Wall Input
 
-                /*
                 string wallData = File.ReadAllText(@"..\..\Data\Wall.json");
-                ICollection<WhWall> whWallList = JsonConvert.DeserializeObject<ICollection<WhWall>>(slabData);
+                ICollection<WhWall> whWallList = JsonConvert.DeserializeObject<ICollection<WhWall>>(wallData);
 
                 foreach (WhWall wallDetail in whWallList)
                 {
@@ -169,10 +197,10 @@ namespace REVIT_IMPORT
                         var wallSP = wallDetail.WhCurve.CurvePoint[0];
                         var wallEP = wallDetail.WhCurve.CurvePoint[1];
 
-                        Point _wallSP = new Point(wallSP.X, wallSP.Y, wallSP.Z);
-                        Point _wallEP = new Point(wallEP.X, wallEP.Y, wallEP.Z);
-
-                        Beam wall = createWall("PANEL", "2985", wallDetail.ThickNess.ToString(), _wallSP, _wallEP);
+                        Point _wallSP = new Point(wallSP.X, wallSP.Y, wallSP.Z - 29500.0);
+                        Point _wallEP = new Point(wallEP.X, wallEP.Y, wallEP.Z - 29500.0);
+                        double wallHeight = Convert.ToDouble(wallDetail.LevelTop) - Convert.ToDouble(wallDetail.LevelBot);
+                        Beam wall = createWall("PANEL", wallHeight.ToString(), wallDetail.ThickNess.ToString(), _wallSP, _wallEP);
                         createPartCutWithBeam(model, wall);
                     }
                 }
@@ -182,93 +210,6 @@ namespace REVIT_IMPORT
                  */
 
                 #endregion Wall Input
-
-                #region Old Input
-
-                /*Issue: ko chắc về cao độ dưới của dầm. Thông thường sẽ là -225 so với FFL nhưng sẽ thay đổi
-                 * nếu Beam Height !== 205
-                 * Hiện tại sẽ xử lý module typical với Beam Height = 205
-                 */
-
-                //Bot Beam - default input
-                string botBeamName = "TB1";
-                double botBeamWidth = 200.0;
-                double botBeamHeight = 205.0;
-                string botBeamProfile = $"{botBeamHeight}*{botBeamWidth}"; // "205*200"
-                Point botBeamSP = new Point(0.0, 2000.0, -20.0);
-                Point botBeamEP = new Point(1880.0, 2000.0, -20.0);
-
-                //Bot Beam - handle input
-                double botZValue = createZValue(botBeamHeight);
-                Point _botBeamSP = new Point(botBeamSP.X, 2000.0, botZValue);  //Tọa độ Y ko dùng theo mặc định nhưng chưa xử lý
-                Point _botBeamEP = new Point(botBeamSP.X, 2000.0, botZValue);  //Tọa độ Y ko dùng theo mặc định nhưng chưa xử lý
-                Point botBeamSPLower = new Point(0.0, 1900.0, botZValue);
-                Point botBeamEPLower = new Point(1880.0, 1900.0, botZValue);
-
-                //Left Beam - default input
-                string leftBeamName = "TB3";
-                double leftBeamWidth = 200.0;
-                double leftBeamHeight = 205.0;
-                string leftBeamProfile = $"{leftBeamHeight}*{leftBeamWidth}";
-                double leftBeamLength = 3990;
-                Point leftBeamSP = new Point(0.0, 2000.0, -20.0);
-                Point leftBeamEP = new Point(1880.0, 2000.0, -20.0);
-
-                //Left Beam - handle input
-                double leftZValue = createZValue(leftBeamHeight);
-                Point _leftBeamSP = new Point(botBeamSPLower.X - leftBeamWidth / 2, botBeamSPLower.Y, leftZValue);
-                Point _leftBeamEP = new Point(botBeamSPLower.X - leftBeamWidth / 2, botBeamSPLower.Y + leftBeamLength, leftZValue);
-
-                //Right Beam - default input
-                string rightBeamName = "TB4";
-                double rightBeamWidth = 200.0;
-                double rightBeamheight = 205.0;
-                string rightBeamProfile = $"{rightBeamheight}*{rightBeamWidth}";
-                double rightBeamLength = 3990;
-                Point rightBeamSP = new Point(0.0, 2000.0, -20.0);
-                Point rightBeamEP = new Point(1880.0, 2000.0, -20.0);
-
-                //Right Beam - handle input
-                double rightZValue = createZValue(rightBeamheight);
-                Point _rightBeamSP = new Point(botBeamEPLower.X + rightBeamWidth / 2, botBeamEPLower.Y, rightZValue);
-                Point _rightBeamEP = new Point(botBeamEPLower.X + rightBeamWidth / 2, botBeamEPLower.Y + rightBeamLength, rightZValue);
-
-                //Top Beam - default input
-                string topBeamName = "TB2";
-                double topBeamWidth = 200.0;
-                double topBeamheight = 215;
-                string topBeamProfile = $"{topBeamheight}*{topBeamWidth}";
-                Point topBeamSP = new Point(0.0, 8550.0, -20.0);
-                Point topBeamEP = new Point(1880.0, 8550.0, -20.0);
-
-                //Top Beam - handle input
-                double topZValue = createZValue(topBeamheight);
-                Point _topBeamSP = new Point(botBeamSP.X, _leftBeamEP.Y - topBeamWidth / 2, topZValue);
-                Point _topBeamEP = new Point(botBeamEP.X, _leftBeamEP.Y - topBeamWidth / 2, topZValue);
-
-                //Slab
-
-                /* Input la List<List<Point>>: 2 truong hop la List chua nhieu ListPoint. Trong ListPoint chua Point
-                 * Ưu tiên xử lý List<Point> trước. Viết method để convert sau
-                 *
-                 */
-                List<Point> slabPointsList1 = new List<Point> { new Point(0.0, 2100, -80), new Point(1880.00, 2100, -80), new Point(1880.00, 3940.00, -80), new Point(0.0, 3940.00, -80) };
-                List<Point> slabPointsList2 = new List<Point> { new Point(-200.00, 3940.00, -10.00), new Point(2080.0, 3940.00, -10.0), new Point(2080.0, 5690.0, -10.0), new Point(-200.0, 5690.0, -10.0) };
-                Hashtable slab1 = new Hashtable
-                {
-                    { "pointsList", slabPointsList1 },
-                    { "thickness", "65" }
-                };
-                Hashtable slab2 = new Hashtable
-                {
-                    { "pointsList", slabPointsList2 },
-                    { "thickness", "135" }
-                };
-
-                //Create List of hashtable. Each hashtable contain a slab's info
-                List<Hashtable> slabs = new List<Hashtable>() { slab1, slab2 };
-
-                #endregion Old Input
 
                 #endregion Input
 
@@ -283,8 +224,7 @@ namespace REVIT_IMPORT
         private static Beam beamCreate(string beamName, string beamHeight, string beamWidth, string beamMark, string beamMaterial,
             TSG.Point beamSP, TSG.Point beamEP, string moduleArea, Point centerPoint)
         {
-            Beam beam = new Beam(Beam.BeamTypeEnum.BEAM);
-            beam.Name = beamName;
+            Beam beam = new Beam(Beam.BeamTypeEnum.BEAM); beam.Name = beamName;
             beam.Profile.ProfileString = $"{beamHeight}*{beamWidth}";
             beam.Material.MaterialString = beamMaterial;
             beam.Class = "6";
@@ -397,9 +337,10 @@ namespace REVIT_IMPORT
         }
 
         //PC ~ Part Cut
-        private static void createBeamPartCut(Beam beamPCFather, double beamPCHeight, double beamPCWidth, Point beamPCStartPoint, Point beamPCEndPoint)
+        private static void createBeamPartCut(Beam beamPCFather, double beamPCHeight, string beamPCWidth, Point beamPCStartPoint, Point beamPCEndPoint)
         {
             Beam beamPC = new Beam();
+            //beamHeight dang la double. Co the loi
             beamPC.Profile.ProfileString = $"{beamPCHeight}*{beamPCWidth}";
             beamPC.Class = BooleanPart.BooleanOperativeClassName;
             beamPC.StartPoint = beamPCStartPoint;
@@ -409,7 +350,7 @@ namespace REVIT_IMPORT
             beamBooleanPart.Father = beamPCFather;
             beamBooleanPart.SetOperativePart(beamPC);
             beamBooleanPart.Insert();
-            beamPC.Delete();
+            //beamPC.Delete();
         }
 
         private static void createPartCutIntersection(Part partToBeCut, Part partShapeCut)
