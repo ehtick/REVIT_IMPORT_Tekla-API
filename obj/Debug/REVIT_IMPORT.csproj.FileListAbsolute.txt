@@ -3,13 +3,11 @@ D:\WorkSpace\CSharp\REVIT_IMPORT\bin\Debug\Tekla.Structures.dll
 D:\WorkSpace\CSharp\REVIT_IMPORT\bin\Debug\Tekla.Structures.Model.dll
 D:\WorkSpace\CSharp\REVIT_IMPORT\bin\Debug\Tekla.Structures.Plugins.dll
 D:\WorkSpace\CSharp\REVIT_IMPORT\bin\Debug\Newtonsoft.Json.dll
-D:\WorkSpace\CSharp\REVIT_IMPORT\bin\Debug\Tekla.Structures.Datatype.dll
 D:\WorkSpace\CSharp\REVIT_IMPORT\bin\Debug\Tekla.Technology.Scripting.Plugins.dll
 D:\WorkSpace\CSharp\REVIT_IMPORT\bin\Debug\Tekla.Structures.xml
 D:\WorkSpace\CSharp\REVIT_IMPORT\bin\Debug\Tekla.Structures.Model.xml
 D:\WorkSpace\CSharp\REVIT_IMPORT\bin\Debug\Tekla.Structures.Plugins.xml
 D:\WorkSpace\CSharp\REVIT_IMPORT\bin\Debug\Newtonsoft.Json.xml
-D:\WorkSpace\CSharp\REVIT_IMPORT\bin\Debug\Tekla.Structures.Datatype.xml
 D:\WorkSpace\CSharp\REVIT_IMPORT\obj\Debug\REVIT_IMPORT.csproj.AssemblyReference.cache
 D:\WorkSpace\CSharp\REVIT_IMPORT\obj\Debug\REVIT_IMPORT.Properties.Resources.resources
 D:\WorkSpace\CSharp\REVIT_IMPORT\obj\Debug\REVIT_IMPORT.csproj.GenerateResource.cache
@@ -18,6 +16,8 @@ D:\WorkSpace\CSharp\REVIT_IMPORT\obj\Debug\REVIT_IMPORT.csproj.CopyComplete
 D:\WorkSpace\CSharp\REVIT_IMPORT\obj\Debug\REVIT_IMPORT.pdb
 D:\WorkSpace\CSharp\REVIT_IMPORT\bin\Debug\WHExtensionElement.dll
 D:\WorkSpace\CSharp\REVIT_IMPORT\obj\Debug\REVIT_IMPORT.Revit_Import.resources
+D:\WorkSpace\CSharp\REVIT_IMPORT\bin\Debug\Tekla.Structures.Dialog.dll
+D:\WorkSpace\CSharp\REVIT_IMPORT\bin\Debug\Tekla.Structures.Dialog.xml
 D:\WorkSpace\CSharp\REVIT_IMPORT\bin\Debug\REVIT_IMPORT.exe.config
 D:\WorkSpace\CSharp\REVIT_IMPORT\bin\Debug\REVIT_IMPORT.exe
 D:\WorkSpace\CSharp\REVIT_IMPORT\obj\Debug\REVIT_IMPORT.csproj.SuggestedBindingRedirects.cache

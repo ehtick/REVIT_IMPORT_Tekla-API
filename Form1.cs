@@ -10,12 +10,14 @@ using Tekla.Structures.Geometry3d;
 using Tekla.Structures.Model;
 using Tekla.Structures.Model.Operations;
 using WHExtensionElement;
+using Tekla.Structures.Plugins;
+using Tekla.Structures.Dialog;
 
 using TSM = Tekla.Structures.Model;
 using TSG = Tekla.Structures.Geometry3d;
 
 using Point = Tekla.Structures.Geometry3d.Point;
-using System.Drawing;
+using System.Security.Cryptography.X509Certificates;
 
 namespace REVIT_IMPORT
 {
@@ -28,10 +30,6 @@ namespace REVIT_IMPORT
 
         // Material apply for all item
         private const string projectMaterial = "C32/40";
-
-        private string beamFilePath = "";
-        private string slabFilePath = "";
-        private string wallFilePath = "";
 
         private void btn_Create_Click(object sender, EventArgs e)
         {
@@ -57,24 +55,36 @@ namespace REVIT_IMPORT
 
                 #region Main
 
-                // App sẽ vẽ từ Bottom beam
-
-                const double magicNum = 0.0;
-                const bool beamInsert = true;
+                const double bottomLevel = 29500.0;
 
                 string modelDirection = cbo_ModelDirection.SelectedItem.ToString();
+                string middleBeamName = null;
+                string specialBeamName = null;
+                if (cbo_middleBeam.SelectedItem != null && cbo_middleBeam.SelectedItem.ToString() != "No Middle Beam")
+                {
+                    middleBeamName = cbo_middleBeam.SelectedItem.ToString();
+                }
+                if (cbo_specialBeam.SelectedItem != null && cbo_specialBeam.SelectedItem.ToString() != "No Special Beam")
+                {
+                    specialBeamName = cbo_specialBeam.SelectedItem.ToString();
+                }
+
+                #region Inputs
+
+                string dataInput = tb_data.Text;
+                if (dataInput == "")
+                {
+                    MessageBox.Show("Please import data first");
+                }
+                string[] data = dataInput.Split('@');
+                string beamData = data[0];
+                string wallData = data[1];
+                string slabData = data[2];
+
+                #endregion Inputs
 
                 #region Beam Input
 
-                string beamData = null;
-                if (beamFilePath != "")
-                {
-                    beamData = File.ReadAllText(beamFilePath);
-                }
-                else
-                {
-                    MessageBox.Show("Please import beam data first");
-                }
                 ICollection<WhBeam> whBeamList = JsonConvert.DeserializeObject<ICollection<WhBeam>>(beamData);
 
                 #region Create Center Point of module
@@ -93,20 +103,133 @@ namespace REVIT_IMPORT
                 #endregion Create Center Point of module
 
                 Hashtable beamWidthList = new Hashtable();
+                double topPointModelY = 0.0;
+                double bottomPointModelY = 0.0;
+                double leftPointModelX = 0.0;
+                double rightPointModelX = 0.0;
+                double leftBeamWidth = 0.0;
+                double rightBeamWidth = 0.0;
+                double topBeamWidth = 0.0;
+                double bottomBeamWidth = 0.0;
                 foreach (WhBeam beamDetail in whBeamList)
                 {
-                    Point beamSP = new Point(beamDetail.StartPoint.X, beamDetail.StartPoint.Y, beamDetail.StartPoint.Z - 29500.00);
-                    Point beamEP = new Point(beamDetail.EndPoint.X, beamDetail.EndPoint.Y, beamDetail.EndPoint.Z - 29500.00);
-                    string beamPosition = checkPartPosition(beamSP, beamEP, centerPoint);
-                    List<Point> beamPoint = formatPoint(beamSP, beamEP, beamPosition);  //Sắp xếp theo chiều vẽ từ dưới lên trên,trái sang phải
-                    Point _beamSP = beamPoint[0];
-                    Point _beamEP = beamPoint[1];
+                    Point beamSP = new Point(beamDetail.StartPoint.X, beamDetail.StartPoint.Y, beamDetail.StartPoint.Z - bottomLevel);
+                    Point beamEP = new Point(beamDetail.EndPoint.X, beamDetail.EndPoint.Y, beamDetail.EndPoint.Z - bottomLevel);
+                    string beamPosition = null;
+                    beamPosition = checkPartPosition(beamSP, beamEP, centerPoint);
+                    if (
+                        (middleBeamName == null && beamDetail.Name != "LINTEL BEAM")
+                        ||
+                        (middleBeamName != null && beamDetail.Name != middleBeamName && beamDetail.Name != "LINTEL BEAM")
+                        )
+                    {
+                        if (modelDirection == "Vertical")
+                        {
+                            switch (beamPosition)
+                            {
+                                case "top":
+                                    topPointModelY = beamSP.Y + (Convert.ToDouble(beamDetail.b) / 2);
+                                    break;
+
+                                case "bottom":
+                                    bottomPointModelY = beamSP.Y - (Convert.ToDouble(beamDetail.b) / 2);
+                                    break;
+
+                                case "left":
+                                    leftPointModelX = beamSP.X - (Convert.ToDouble(beamDetail.b) / 2);
+                                    leftBeamWidth = Convert.ToDouble(beamDetail.b);
+                                    break;
+
+                                case "right":
+                                    rightPointModelX = beamSP.X + (Convert.ToDouble(beamDetail.b) / 2);
+                                    rightBeamWidth = Convert.ToDouble(beamDetail.b);
+                                    break;
+
+                                default:
+                                    break;
+                            }
+                        }
+                        else if (modelDirection == "Horizontal")
+                        {
+                            switch (beamPosition)
+                            {
+                                case "top":
+                                    topPointModelY = beamSP.Y + (Convert.ToDouble(beamDetail.b) / 2);
+                                    topBeamWidth = Convert.ToDouble(beamDetail.b);
+                                    break;
+
+                                case "bottom":
+                                    bottomPointModelY = beamSP.Y - (Convert.ToDouble(beamDetail.b) / 2);
+                                    bottomBeamWidth = Convert.ToDouble(beamDetail.b);
+                                    break;
+
+                                case "left":
+                                    leftPointModelX = beamSP.X - (Convert.ToDouble(beamDetail.b) / 2);
+                                    break;
+
+                                case "right":
+                                    rightPointModelX = beamSP.X + (Convert.ToDouble(beamDetail.b) / 2);
+                                    break;
+
+                                default:
+                                    break;
+                            }
+                        }
+                    }
+                }
+
+                foreach (WhBeam beamDetail in whBeamList)
+                {
+                    Point beamSP = new Point(beamDetail.StartPoint.X, beamDetail.StartPoint.Y, beamDetail.StartPoint.Z - bottomLevel);
+                    Point beamEP = new Point(beamDetail.EndPoint.X, beamDetail.EndPoint.Y, beamDetail.EndPoint.Z - bottomLevel);
+                    string beamPosition = null;
+                    if (middleBeamName != null)
+                    {
+                        beamPosition = "middle";
+                    }
+                    else
+                    {
+                        beamPosition = checkPartPosition(beamSP, beamEP, centerPoint);
+                    }
+                    List<Point> beamPoint = formatPoint(beamSP, beamEP, beamPosition);
+                    Point _beamSP = null;
+                    Point _beamEP = null;
+                    if (beamDetail.Name == specialBeamName || beamDetail.Name == "LINTEL BEAM")
+                    {
+                        _beamSP = beamPoint[0];
+                        _beamEP = beamPoint[1];
+                    }
+
+                    if (modelDirection == "Vertical" && beamDetail.Name != specialBeamName && beamDetail.Name != "LINTEL BEAM")
+                    {
+                        if (beamPosition == "top" || beamPosition == "bottom")
+                        {
+                            _beamSP = new Point(leftPointModelX + leftBeamWidth, beamPoint[0].Y, beamPoint[0].Z);
+                            _beamEP = new Point(rightPointModelX - rightBeamWidth, beamPoint[1].Y, beamPoint[1].Z);
+                        }
+                        else if (beamPosition == "left" || beamPosition == "right")
+                        {
+                            _beamSP = new Point(beamPoint[0].X, bottomPointModelY, beamPoint[0].Z);
+                            _beamEP = new Point(beamPoint[1].X, topPointModelY, beamPoint[1].Z);
+                        }
+                    }
+                    else if (modelDirection == "Horizontal" && beamDetail.Name != specialBeamName && beamDetail.Name != "LINTEL BEAM")
+                    {
+                        if (beamPosition == "top" || beamPosition == "bottom")
+                        {
+                            _beamSP = new Point(leftPointModelX, beamPoint[0].Y, beamPoint[0].Z);
+                            _beamEP = new Point(rightPointModelX, beamPoint[1].Y, beamPoint[1].Z);
+                        }
+                        else if (beamPosition == "left" || beamPosition == "right")
+                        {
+                            _beamSP = new Point(beamPoint[0].X, bottomPointModelY + bottomBeamWidth, beamPoint[0].Z);
+                            _beamEP = new Point(beamPoint[1].X, topPointModelY - topBeamWidth, beamPoint[1].Z);
+                        }
+                    }
                     double dropLength = beamDetail.LengthDrop;
                     Beam beamMain = null;
 
                     beamMain = beamCreate(beamDetail.Name, beamDetail.h, beamDetail.b, beamDetail.Type, projectMaterial, _beamSP, _beamEP, modelDirection, beamPosition);
-
-                    //Convert.ToDouble(beamDetail.h) / 2
 
                     #region Create beam drop
 
@@ -114,10 +237,10 @@ namespace REVIT_IMPORT
                     {
                         //deconstruction tuple
                         (WhPoint whPoint1, WhPoint whPoint2, WhPoint whPoint3, WhPoint whPoint4) = beamDetail.DropPoint;
-                        Point point1 = new Point(whPoint1.X, whPoint1.Y, whPoint1.Z - 29500.0);
-                        Point point2 = new Point(whPoint2.X, whPoint2.Y, whPoint2.Z - 29500.0);
-                        Point point3 = new Point(whPoint3.X, whPoint3.Y, whPoint3.Z - 29500.0);
-                        Point point4 = new Point(whPoint4.X, whPoint4.Y, whPoint4.Z - 29500.0);
+                        Point point1 = new Point(whPoint1.X, whPoint1.Y, whPoint1.Z - bottomLevel);
+                        Point point2 = new Point(whPoint2.X, whPoint2.Y, whPoint2.Z - bottomLevel);
+                        Point point3 = new Point(whPoint3.X, whPoint3.Y, whPoint3.Z - bottomLevel);
+                        Point point4 = new Point(whPoint4.X, whPoint4.Y, whPoint4.Z - bottomLevel);
 
                         List<Point> firstDropPointGroup = new List<Point>() { point1, point2, point3, point4 };
 
@@ -151,8 +274,8 @@ namespace REVIT_IMPORT
 
                         Point dropSP = new Point(centerPointX, centerPointY, dropPointZ.Max());
 
-                        Point EpDrop = new Point(beamDetail.EpDrop.X, beamDetail.EpDrop.Y, beamDetail.EpDrop.Z - 29500.0);
-                        Point SpDrop = new Point(beamDetail.SpDrop.X, beamDetail.SpDrop.Y, beamDetail.SpDrop.Z - 29500.0);
+                        Point EpDrop = new Point(beamDetail.EpDrop.X, beamDetail.EpDrop.Y, beamDetail.EpDrop.Z - bottomLevel);
+                        Point SpDrop = new Point(beamDetail.SpDrop.X, beamDetail.SpDrop.Y, beamDetail.SpDrop.Z - bottomLevel);
 
                         bool isEpFromInputCorrect = false;  //Để kiểm tra EP từ Input có đúng là EP của drop ko hay là SP của drop vì có trường hợp đồi chỗ cho nhau
                         Point EpFromInputChecked = SpDrop;
@@ -216,21 +339,12 @@ namespace REVIT_IMPORT
 
                 #region Slab Input
 
-                string slabData = null;
-                if (slabFilePath != "")
-                {
-                    slabData = File.ReadAllText(slabFilePath);
-                }
-                else
-                {
-                    MessageBox.Show("Please import slab data");
-                }
                 ICollection<WhSlab> whSlabList = JsonConvert.DeserializeObject<ICollection<WhSlab>>(slabData);
                 foreach (WhSlab slabDetail in whSlabList)
                 {
                     List<TSG.Point> slabPointBoundaryList = new List<Point>()
                     {
-                    new Point(slabDetail.SketchOut[0].CurvePoint[0].X, slabDetail.SketchOut[0].CurvePoint[0].Y, slabDetail.SketchOut[0].CurvePoint[0].Z - 29500.00)
+                    new Point(slabDetail.SketchOut[0].CurvePoint[0].X, slabDetail.SketchOut[0].CurvePoint[0].Y, slabDetail.SketchOut[0].CurvePoint[0].Z - bottomLevel)
                     };
                     double slabThickness;
                     if (slabDetail.Slope == true && slabDetail.ThickNess == 130.0)
@@ -243,7 +357,7 @@ namespace REVIT_IMPORT
                     }
                     foreach (WhCurve slabSketchOut in slabDetail.SketchOut)
                     {
-                        slabPointBoundaryList.Add(new Point(slabSketchOut.CurvePoint[1].X, slabSketchOut.CurvePoint[1].Y, slabSketchOut.CurvePoint[1].Z - 29500.00));
+                        slabPointBoundaryList.Add(new Point(slabSketchOut.CurvePoint[1].X, slabSketchOut.CurvePoint[1].Y, slabSketchOut.CurvePoint[1].Z - bottomLevel));
                     }
                     ContourPlate slab = slabCreate(slabThickness, projectMaterial, slabPointBoundaryList, slabDetail.Slope);
 
@@ -264,12 +378,12 @@ namespace REVIT_IMPORT
                         {
                             List<Point> slabOpeningPointList = new List<Point>()
                             {
-                                new Point(slabSketchInList[0].CurvePoint[0].X, slabSketchInList[0].CurvePoint[0].Y, slabSketchInList[0].CurvePoint[0].Z - 29500.00)
+                                new Point(slabSketchInList[0].CurvePoint[0].X, slabSketchInList[0].CurvePoint[0].Y, slabSketchInList[0].CurvePoint[0].Z - bottomLevel)
                             };
 
                             foreach (WhCurve slabSketchIn in slabSketchInList)
                             {
-                                slabOpeningPointList.Add(new Point(slabSketchIn.CurvePoint[1].X, slabSketchIn.CurvePoint[1].Y, slabSketchIn.CurvePoint[1].Z - 29500.0));
+                                slabOpeningPointList.Add(new Point(slabSketchIn.CurvePoint[1].X, slabSketchIn.CurvePoint[1].Y, slabSketchIn.CurvePoint[1].Z - bottomLevel));
                             }
                             ContourPlate slabOpening = slabCreate(slabThickness, projectMaterial, slabOpeningPointList, slabDetail.Slope);
                             createPartCutIntersection(slab, slabOpening);
@@ -287,16 +401,6 @@ namespace REVIT_IMPORT
 
                 #region Wall Input
 
-                string wallData = null;
-
-                if (wallFilePath != "")
-                {
-                    wallData = File.ReadAllText(wallFilePath);
-                }
-                else
-                {
-                    MessageBox.Show("Please import wall data");
-                }
                 ICollection<WhWall> whWallList = JsonConvert.DeserializeObject<ICollection<WhWall>>(wallData);
 
                 foreach (WhWall wallDetail in whWallList)
@@ -310,14 +414,16 @@ namespace REVIT_IMPORT
                         var wallSP = wallDetail.WhCurve.CurvePoint[0];
                         var wallEP = wallDetail.WhCurve.CurvePoint[1];
 
-                        Point _wallSP = new Point(wallSP.X, wallSP.Y, wallSP.Z - 29500.0 - magicNum);
-                        Point _wallEP = new Point(wallEP.X, wallEP.Y, wallEP.Z - 29500.0 - magicNum);
+                        Point _wallSP = new Point(wallSP.X, wallSP.Y, wallSP.Z - bottomLevel);
+                        Point _wallEP = new Point(wallEP.X, wallEP.Y, wallEP.Z - bottomLevel);
                         double wallHeight = Convert.ToDouble(wallDetail.Height);
-                        bool isRecess = true;
-                        Beam wall = wallCreate(wallDetail.Name, wallHeight.ToString(), wallDetail.ThickNess.ToString(), _wallSP, _wallEP);
-                        model.CommitChanges();
                         string wallPosition = checkPartPosition(_wallSP, _wallEP, centerPoint);
+                        List<Point> wallPoint = formatPoint(_wallSP, _wallEP, wallPosition);
+                        _wallSP = wallPoint[0];
+                        _wallEP = wallPoint[1];
+                        Beam wall = wallCreate(wallDetail.Name, wallHeight.ToString(), wallDetail.ThickNess.ToString(), _wallSP, _wallEP, wallPosition, model);
                         wall.SetUserProperty("comment", wallPosition);
+                        model.CommitChanges();
                         createPartCutWithBeam(model, wall);
 
                         #region Create Wall Opening
@@ -329,7 +435,7 @@ namespace REVIT_IMPORT
                                 List<Point> wallOpeningPointList = new List<Point>();
                                 foreach (WhPoint point in slabSketchInList.OpeningPoint)
                                 {
-                                    wallOpeningPointList.Add(new Point(point.X, point.Y, point.Z));
+                                    wallOpeningPointList.Add(new Point(point.X, point.Y, point.Z - bottomLevel));
                                 }
                                 Point wallOpeningFirstPoint = wallOpeningPointList[0];
                                 Point wallOpeningSecondPoint = wallOpeningPointList[1];
@@ -338,7 +444,8 @@ namespace REVIT_IMPORT
                                 Point wallOpeningEP = new Point(wallOpeningSecondPoint.X, wallOpeningSecondPoint.Y, zValueWallOpening);
 
                                 double openingHeight = Math.Abs(wallOpeningFirstPoint.Z - wallOpeningSecondPoint.Z);
-                                Beam wallOpening = wallCreate("wall Opening", openingHeight.ToString(), (2 * wallDetail.ThickNess).ToString(), wallOpeningSP, wallOpeningEP);
+                                Beam wallOpening = wallCreate("wall Opening", openingHeight.ToString(), (2 * wallDetail.ThickNess).ToString(), wallOpeningSP, wallOpeningEP,
+                                    wallPosition, model);
                                 createPartCutIntersection(wall, wallOpening);
                                 wallOpening.Delete();
                             }
@@ -354,12 +461,15 @@ namespace REVIT_IMPORT
                                 createRecess(wall, wallHeight, wallPosition, wallDetail.ThickNess, _wallSP, _recessPoint, model, modelDirection);
                             });
                         }
+                        /*
+                        if (wallDetail != null)
+
+                        {
+                            createCorrugatedPipe(wall);
+                        }
+                        */
                     }
                 }
-
-                /*
-                 * In future I want to just check 1 or 2 beams relate to wall, not loop through all beam
-                 */
 
                 #endregion Wall Input
 
@@ -549,7 +659,7 @@ namespace REVIT_IMPORT
             }
         }
 
-        private static Beam wallCreate(string wallName, string wallHeight, string wallThickness, Point wallSP, Point wallEP)
+        private static Beam wallCreate(string wallName, string wallHeight, string wallThickness, Point wallSP, Point wallEP, string wallPosition, Model model)
         {
             Beam wall = new Beam(Beam.BeamTypeEnum.PANEL);
             wall.Name = wallName == null ? "PANEL" : wallName;
@@ -557,8 +667,21 @@ namespace REVIT_IMPORT
             wall.Material.MaterialString = projectMaterial;
             wall.StartPoint = wallSP;
             wall.EndPoint = wallEP;
-            wall.Class = wall.Name == "PANEL" ? "1" : "5";
+
+            if (Convert.ToDouble(wallThickness) >= 160.0)
+            {
+                wall.Class = "9";
+            }
+            else
+            {
+                wall.Class = wall.Name == "PANEL" ? "1" : "5";
+            }
             wall.Position.Depth = Position.DepthEnum.FRONT;
+
+            if (wallName != "wall Opening" && (wallPosition == "top" || wallPosition == "bottom"))
+            {
+                //createOBB(model, wall);
+            }
             wall.Insert();
             return wall;
         }
@@ -688,20 +811,36 @@ namespace REVIT_IMPORT
             wallRecess.Delete();
         }
 
-        private static List<Point> formatPoint(Point startPoint, Point endPoint, string beamPosition)
+        private static void createCorrugatedPipe(Beam wall)
         {
+            //Developing
+            Beam corrugatedPipe = new Beam(Beam.BeamTypeEnum.BEAM);
+            corrugatedPipe.Profile.ProfileString = "WHCORRUG115*75";
+            corrugatedPipe.Material.MaterialString = projectMaterial;
+            corrugatedPipe.Class = "2";
+            Point corrugSP = null;
+            Point corrugEP = null;
+            corrugatedPipe.Position.Rotation = Position.RotationEnum.TOP;
+            corrugatedPipe.Position.Plane = Position.PlaneEnum.MIDDLE;
+            corrugatedPipe.Position.Depth = Position.DepthEnum.MIDDLE;
+            corrugatedPipe.StartPoint = corrugSP;
+            corrugatedPipe.EndPoint = corrugEP;
+            corrugatedPipe.Insert();
+            createPartCutIntersection(wall, corrugatedPipe);
+        }
+
+        private static List<Point> formatPoint(Point startPoint, Point endPoint, string partPosition)
+        {
+            //Format sao cho SP o duoi, EP o tren || SP ben trai, EP ben phai
             Point tempPoint = null;
 
-            if (beamPosition == "left" || beamPosition == "right")
+            if ((partPosition == "left" || partPosition == "right") && (startPoint.Y > endPoint.Y))
             {
-                if (startPoint.Y > endPoint.Y)
-                {
-                    tempPoint = endPoint;
-                    endPoint = startPoint;
-                    startPoint = tempPoint;
-                }
+                tempPoint = endPoint;
+                endPoint = startPoint;
+                startPoint = tempPoint;
             }
-            else if ((beamPosition == "top" || beamPosition == "bottom") && startPoint.X > endPoint.X)
+            else if ((partPosition == "top" || partPosition == "bottom") && startPoint.X > endPoint.X)
             {
                 tempPoint = endPoint;
                 endPoint = startPoint;
@@ -792,62 +931,37 @@ namespace REVIT_IMPORT
             cbo_ModelDirection.SelectedIndex = 0;
         }
 
-        private void btn_importBeamData_Click(object sender, EventArgs e)
-        {
-            OpenFileDialog dialog = new OpenFileDialog();
-            dialog.Filter = "Beam data json |*beam.json";
-            dialog.Multiselect = false;
-            dialog.Title = "Import beam data by json file";
-            if (dialog.ShowDialog() == DialogResult.OK)
-            {
-                beamFilePath = dialog.FileName;
-                lb_beam.Text = dialog.SafeFileName;
-            }
-        }
-
-        private void btn_importSlabData_Click(object sender, EventArgs e)
-        {
-            OpenFileDialog dialog = new OpenFileDialog();
-            dialog.Filter = "Json file |*slab.json";
-            dialog.Multiselect = false;
-            dialog.Title = "Import slab data by json file";
-            if (dialog.ShowDialog() == DialogResult.OK)
-            {
-                slabFilePath = dialog.FileName;
-                //dialog.SafeFileName
-                lb_slab.Text = dialog.SafeFileName;
-            }
-        }
-
-        private void btn_importWallData_Click(object sender, EventArgs e)
-        {
-            OpenFileDialog dialog = new OpenFileDialog();
-            dialog.Filter = "Json file |*wall.json";
-            dialog.Multiselect = false;
-            dialog.Title = "Import wall data by json file";
-            if (dialog.ShowDialog() == DialogResult.OK)
-            {
-                wallFilePath = dialog.FileName;
-                lb_wall.Text = dialog.SafeFileName;
-            }
-        }
-
-        private void openFileDialog1_FileOk(object sender, System.ComponentModel.CancelEventArgs e)
-        {
-        }
-
-        private void label2_Click(object sender, EventArgs e)
-        {
-        }
-
         private void btn_clearInput_Click(object sender, EventArgs e)
         {
-            beamFilePath = "";
-            slabFilePath = "";
-            wallFilePath = "";
-            lb_beam.Text = "none";
-            lb_slab.Text = "none";
-            lb_wall.Text = "none";
+            tb_data.Text = "";
+        }
+
+        private void btn_paste_Click(object sender, EventArgs e)
+        {
+            tb_data.Text = Clipboard.GetText();
+
+            cbo_middleBeam.Items.Clear();
+            cbo_specialBeam.Items.Clear();
+
+            cbo_middleBeam.Items.Add("No Middle Beam");
+            cbo_specialBeam.Items.Add("No Special Beam");
+
+            string dataInput = tb_data.Text;
+            if (dataInput == "")
+            {
+                MessageBox.Show("Please import data first");
+            }
+            string[] data = dataInput.Split('@');
+            string beamData = data[0];
+            ICollection<WhBeam> whBeamList = JsonConvert.DeserializeObject<ICollection<WhBeam>>(beamData);
+            foreach (WhBeam beamDetail in whBeamList)
+            {
+                if (beamDetail.Name != null && beamDetail.Name != "LINTEL BEAM")
+                {
+                    cbo_middleBeam.Items.Add(beamDetail.Name);
+                    cbo_specialBeam.Items.Add(beamDetail.Name);
+                }
+            }
         }
     }
 }

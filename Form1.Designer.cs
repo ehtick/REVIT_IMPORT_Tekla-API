@@ -32,20 +32,20 @@
             this.btn_Create = new System.Windows.Forms.Button();
             this.cbo_ModelDirection = new System.Windows.Forms.ComboBox();
             this.label1 = new System.Windows.Forms.Label();
-            this.btn_importBeamData = new System.Windows.Forms.Button();
-            this.btn_importSlabData = new System.Windows.Forms.Button();
-            this.btn_importWallData = new System.Windows.Forms.Button();
-            this.lb_beam = new System.Windows.Forms.Label();
-            this.lb_slab = new System.Windows.Forms.Label();
-            this.lb_wall = new System.Windows.Forms.Label();
             this.btn_clearInput = new System.Windows.Forms.Button();
+            this.tb_data = new System.Windows.Forms.TextBox();
+            this.btn_paste = new System.Windows.Forms.Button();
+            this.cbo_middleBeam = new System.Windows.Forms.ComboBox();
+            this.label2 = new System.Windows.Forms.Label();
+            this.label3 = new System.Windows.Forms.Label();
+            this.cbo_specialBeam = new System.Windows.Forms.ComboBox();
             this.SuspendLayout();
             // 
             // btn_Create
             // 
-            this.btn_Create.Location = new System.Drawing.Point(288, 147);
+            this.btn_Create.Location = new System.Drawing.Point(208, 171);
             this.btn_Create.Name = "btn_Create";
-            this.btn_Create.Size = new System.Drawing.Size(99, 47);
+            this.btn_Create.Size = new System.Drawing.Size(121, 66);
             this.btn_Create.TabIndex = 0;
             this.btn_Create.Text = "Build";
             this.btn_Create.UseVisualStyleBackColor = true;
@@ -58,7 +58,7 @@
             this.cbo_ModelDirection.Items.AddRange(new object[] {
             "Vertical",
             "Horizontal"});
-            this.cbo_ModelDirection.Location = new System.Drawing.Point(31, 161);
+            this.cbo_ModelDirection.Location = new System.Drawing.Point(12, 163);
             this.cbo_ModelDirection.Name = "cbo_ModelDirection";
             this.cbo_ModelDirection.Size = new System.Drawing.Size(99, 21);
             this.cbo_ModelDirection.TabIndex = 2;
@@ -66,92 +66,89 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(28, 144);
+            this.label1.Location = new System.Drawing.Point(12, 147);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(81, 13);
             this.label1.TabIndex = 3;
             this.label1.Text = "Model Direction";
             // 
-            // btn_importBeamData
-            // 
-            this.btn_importBeamData.Location = new System.Drawing.Point(31, 32);
-            this.btn_importBeamData.Name = "btn_importBeamData";
-            this.btn_importBeamData.Size = new System.Drawing.Size(99, 29);
-            this.btn_importBeamData.TabIndex = 4;
-            this.btn_importBeamData.Text = "Import beam data";
-            this.btn_importBeamData.UseVisualStyleBackColor = true;
-            this.btn_importBeamData.Click += new System.EventHandler(this.btn_importBeamData_Click);
-            // 
-            // btn_importSlabData
-            // 
-            this.btn_importSlabData.Location = new System.Drawing.Point(161, 32);
-            this.btn_importSlabData.Name = "btn_importSlabData";
-            this.btn_importSlabData.Size = new System.Drawing.Size(99, 29);
-            this.btn_importSlabData.TabIndex = 4;
-            this.btn_importSlabData.Text = "Import slab data";
-            this.btn_importSlabData.UseVisualStyleBackColor = true;
-            this.btn_importSlabData.Click += new System.EventHandler(this.btn_importSlabData_Click);
-            // 
-            // btn_importWallData
-            // 
-            this.btn_importWallData.Location = new System.Drawing.Point(288, 32);
-            this.btn_importWallData.Name = "btn_importWallData";
-            this.btn_importWallData.Size = new System.Drawing.Size(99, 29);
-            this.btn_importWallData.TabIndex = 4;
-            this.btn_importWallData.Text = "Import wall data";
-            this.btn_importWallData.UseVisualStyleBackColor = true;
-            this.btn_importWallData.Click += new System.EventHandler(this.btn_importWallData_Click);
-            // 
-            // lb_beam
-            // 
-            this.lb_beam.AutoSize = true;
-            this.lb_beam.Location = new System.Drawing.Point(31, 68);
-            this.lb_beam.Name = "lb_beam";
-            this.lb_beam.Size = new System.Drawing.Size(31, 13);
-            this.lb_beam.TabIndex = 5;
-            this.lb_beam.Text = "none";
-            // 
-            // lb_slab
-            // 
-            this.lb_slab.AutoSize = true;
-            this.lb_slab.Location = new System.Drawing.Point(158, 68);
-            this.lb_slab.Name = "lb_slab";
-            this.lb_slab.Size = new System.Drawing.Size(31, 13);
-            this.lb_slab.TabIndex = 6;
-            this.lb_slab.Text = "none";
-            // 
-            // lb_wall
-            // 
-            this.lb_wall.AutoSize = true;
-            this.lb_wall.Location = new System.Drawing.Point(285, 68);
-            this.lb_wall.Name = "lb_wall";
-            this.lb_wall.Size = new System.Drawing.Size(31, 13);
-            this.lb_wall.TabIndex = 7;
-            this.lb_wall.Text = "none";
-            this.lb_wall.Click += new System.EventHandler(this.label2_Click);
-            // 
             // btn_clearInput
             // 
-            this.btn_clearInput.Location = new System.Drawing.Point(161, 147);
+            this.btn_clearInput.Location = new System.Drawing.Point(314, 81);
             this.btn_clearInput.Name = "btn_clearInput";
-            this.btn_clearInput.Size = new System.Drawing.Size(99, 47);
+            this.btn_clearInput.Size = new System.Drawing.Size(73, 47);
             this.btn_clearInput.TabIndex = 8;
             this.btn_clearInput.Text = "Clear Input";
             this.btn_clearInput.UseVisualStyleBackColor = true;
             this.btn_clearInput.Click += new System.EventHandler(this.btn_clearInput_Click);
             // 
+            // tb_data
+            // 
+            this.tb_data.Location = new System.Drawing.Point(12, 12);
+            this.tb_data.Multiline = true;
+            this.tb_data.Name = "tb_data";
+            this.tb_data.ReadOnly = true;
+            this.tb_data.Size = new System.Drawing.Size(281, 116);
+            this.tb_data.TabIndex = 9;
+            // 
+            // btn_paste
+            // 
+            this.btn_paste.Location = new System.Drawing.Point(314, 12);
+            this.btn_paste.Name = "btn_paste";
+            this.btn_paste.Size = new System.Drawing.Size(73, 49);
+            this.btn_paste.TabIndex = 10;
+            this.btn_paste.Text = "Paste";
+            this.btn_paste.UseVisualStyleBackColor = true;
+            this.btn_paste.Click += new System.EventHandler(this.btn_paste_Click);
+            // 
+            // cbo_middleBeam
+            // 
+            this.cbo_middleBeam.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cbo_middleBeam.FormattingEnabled = true;
+            this.cbo_middleBeam.Location = new System.Drawing.Point(12, 211);
+            this.cbo_middleBeam.Name = "cbo_middleBeam";
+            this.cbo_middleBeam.Size = new System.Drawing.Size(99, 21);
+            this.cbo_middleBeam.TabIndex = 11;
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(12, 195);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(112, 13);
+            this.label2.TabIndex = 12;
+            this.label2.Text = "Middle Beam ( if exist )";
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(9, 249);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(116, 13);
+            this.label3.TabIndex = 13;
+            this.label3.Text = "Special Beam ( if exist )";
+            // 
+            // cbo_specialBeam
+            // 
+            this.cbo_specialBeam.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cbo_specialBeam.FormattingEnabled = true;
+            this.cbo_specialBeam.Location = new System.Drawing.Point(12, 265);
+            this.cbo_specialBeam.Name = "cbo_specialBeam";
+            this.cbo_specialBeam.Size = new System.Drawing.Size(99, 21);
+            this.cbo_specialBeam.TabIndex = 14;
+            // 
             // Revit_Import
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(411, 287);
+            this.ClientSize = new System.Drawing.Size(414, 342);
+            this.Controls.Add(this.cbo_specialBeam);
+            this.Controls.Add(this.label3);
+            this.Controls.Add(this.label2);
+            this.Controls.Add(this.cbo_middleBeam);
+            this.Controls.Add(this.btn_paste);
+            this.Controls.Add(this.tb_data);
             this.Controls.Add(this.btn_clearInput);
-            this.Controls.Add(this.lb_wall);
-            this.Controls.Add(this.lb_slab);
-            this.Controls.Add(this.lb_beam);
-            this.Controls.Add(this.btn_importWallData);
-            this.Controls.Add(this.btn_importSlabData);
-            this.Controls.Add(this.btn_importBeamData);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.cbo_ModelDirection);
             this.Controls.Add(this.btn_Create);
@@ -169,13 +166,13 @@
         private System.Windows.Forms.Button btn_Create;
         private System.Windows.Forms.ComboBox cbo_ModelDirection;
         private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.Button btn_importBeamData;
-        private System.Windows.Forms.Button btn_importSlabData;
-        private System.Windows.Forms.Button btn_importWallData;
-        private System.Windows.Forms.Label lb_beam;
-        private System.Windows.Forms.Label lb_slab;
-        private System.Windows.Forms.Label lb_wall;
         private System.Windows.Forms.Button btn_clearInput;
+        private System.Windows.Forms.TextBox tb_data;
+        private System.Windows.Forms.Button btn_paste;
+        private System.Windows.Forms.ComboBox cbo_middleBeam;
+        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.ComboBox cbo_specialBeam;
     }
 }
 
