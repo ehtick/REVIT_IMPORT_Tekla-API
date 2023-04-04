@@ -58,7 +58,7 @@ namespace REVIT_IMPORT
                 const double bottomLevel = 29500.0;
 
                 string modelDirection = cbo_ModelDirection.SelectedItem.ToString();
-                string middleBeamName = null;
+                string middleBeamName = "middleBeamName";
                 string specialBeamName = null;
                 if (cbo_middleBeam.SelectedItem != null && cbo_middleBeam.SelectedItem.ToString() != "No Middle Beam")
                 {
@@ -102,11 +102,10 @@ namespace REVIT_IMPORT
 
                 #endregion Create Center Point of module
 
-                Hashtable beamWidthList = new Hashtable();
-                double topPointModelY = 0.0;
-                double bottomPointModelY = 0.0;
-                double leftPointModelX = 0.0;
-                double rightPointModelX = 0.0;
+                double topPointBeamModel = 0.0;
+                double bottomPointBeamModel = 0.0;
+                double leftPointBeamModel = 0.0;
+                double rightPointBeamModel = 0.0;
                 double leftBeamWidth = 0.0;
                 double rightBeamWidth = 0.0;
                 double topBeamWidth = 0.0;
@@ -128,20 +127,20 @@ namespace REVIT_IMPORT
                             switch (beamPosition)
                             {
                                 case "top":
-                                    topPointModelY = beamSP.Y + (Convert.ToDouble(beamDetail.b) / 2);
+                                    topPointBeamModel = beamSP.Y + (Convert.ToDouble(beamDetail.b) / 2);
                                     break;
 
                                 case "bottom":
-                                    bottomPointModelY = beamSP.Y - (Convert.ToDouble(beamDetail.b) / 2);
+                                    bottomPointBeamModel = beamSP.Y - (Convert.ToDouble(beamDetail.b) / 2);
                                     break;
 
                                 case "left":
-                                    leftPointModelX = beamSP.X - (Convert.ToDouble(beamDetail.b) / 2);
+                                    leftPointBeamModel = beamSP.X - (Convert.ToDouble(beamDetail.b) / 2);
                                     leftBeamWidth = Convert.ToDouble(beamDetail.b);
                                     break;
 
                                 case "right":
-                                    rightPointModelX = beamSP.X + (Convert.ToDouble(beamDetail.b) / 2);
+                                    rightPointBeamModel = beamSP.X + (Convert.ToDouble(beamDetail.b) / 2);
                                     rightBeamWidth = Convert.ToDouble(beamDetail.b);
                                     break;
 
@@ -154,21 +153,21 @@ namespace REVIT_IMPORT
                             switch (beamPosition)
                             {
                                 case "top":
-                                    topPointModelY = beamSP.Y + (Convert.ToDouble(beamDetail.b) / 2);
+                                    topPointBeamModel = beamSP.Y + (Convert.ToDouble(beamDetail.b) / 2);
                                     topBeamWidth = Convert.ToDouble(beamDetail.b);
                                     break;
 
                                 case "bottom":
-                                    bottomPointModelY = beamSP.Y - (Convert.ToDouble(beamDetail.b) / 2);
+                                    bottomPointBeamModel = beamSP.Y - (Convert.ToDouble(beamDetail.b) / 2);
                                     bottomBeamWidth = Convert.ToDouble(beamDetail.b);
                                     break;
 
                                 case "left":
-                                    leftPointModelX = beamSP.X - (Convert.ToDouble(beamDetail.b) / 2);
+                                    leftPointBeamModel = beamSP.X - (Convert.ToDouble(beamDetail.b) / 2);
                                     break;
 
                                 case "right":
-                                    rightPointModelX = beamSP.X + (Convert.ToDouble(beamDetail.b) / 2);
+                                    rightPointBeamModel = beamSP.X + (Convert.ToDouble(beamDetail.b) / 2);
                                     break;
 
                                 default:
@@ -183,7 +182,7 @@ namespace REVIT_IMPORT
                     Point beamSP = new Point(beamDetail.StartPoint.X, beamDetail.StartPoint.Y, beamDetail.StartPoint.Z - bottomLevel);
                     Point beamEP = new Point(beamDetail.EndPoint.X, beamDetail.EndPoint.Y, beamDetail.EndPoint.Z - bottomLevel);
                     string beamPosition = null;
-                    if (middleBeamName != null)
+                    if (middleBeamName == beamDetail.Name)
                     {
                         beamPosition = "middle";
                     }
@@ -202,28 +201,28 @@ namespace REVIT_IMPORT
 
                     if (modelDirection == "Vertical" && beamDetail.Name != specialBeamName && beamDetail.Name != "LINTEL BEAM")
                     {
-                        if (beamPosition == "top" || beamPosition == "bottom")
+                        if (beamPosition == "top" || beamPosition == "bottom" || beamPosition == "middle")
                         {
-                            _beamSP = new Point(leftPointModelX + leftBeamWidth, beamPoint[0].Y, beamPoint[0].Z);
-                            _beamEP = new Point(rightPointModelX - rightBeamWidth, beamPoint[1].Y, beamPoint[1].Z);
+                            _beamSP = new Point(leftPointBeamModel + leftBeamWidth, beamPoint[0].Y, beamPoint[0].Z);
+                            _beamEP = new Point(rightPointBeamModel - rightBeamWidth, beamPoint[1].Y, beamPoint[1].Z);
                         }
                         else if (beamPosition == "left" || beamPosition == "right")
                         {
-                            _beamSP = new Point(beamPoint[0].X, bottomPointModelY, beamPoint[0].Z);
-                            _beamEP = new Point(beamPoint[1].X, topPointModelY, beamPoint[1].Z);
+                            _beamSP = new Point(beamPoint[0].X, bottomPointBeamModel, beamPoint[0].Z);
+                            _beamEP = new Point(beamPoint[1].X, topPointBeamModel, beamPoint[1].Z);
                         }
                     }
                     else if (modelDirection == "Horizontal" && beamDetail.Name != specialBeamName && beamDetail.Name != "LINTEL BEAM")
                     {
                         if (beamPosition == "top" || beamPosition == "bottom")
                         {
-                            _beamSP = new Point(leftPointModelX, beamPoint[0].Y, beamPoint[0].Z);
-                            _beamEP = new Point(rightPointModelX, beamPoint[1].Y, beamPoint[1].Z);
+                            _beamSP = new Point(leftPointBeamModel, beamPoint[0].Y, beamPoint[0].Z);
+                            _beamEP = new Point(rightPointBeamModel, beamPoint[1].Y, beamPoint[1].Z);
                         }
-                        else if (beamPosition == "left" || beamPosition == "right")
+                        else if (beamPosition == "left" || beamPosition == "right" || beamPosition == "middle")
                         {
-                            _beamSP = new Point(beamPoint[0].X, bottomPointModelY + bottomBeamWidth, beamPoint[0].Z);
-                            _beamEP = new Point(beamPoint[1].X, topPointModelY - topBeamWidth, beamPoint[1].Z);
+                            _beamSP = new Point(beamPoint[0].X, bottomPointBeamModel + bottomBeamWidth, beamPoint[0].Z);
+                            _beamEP = new Point(beamPoint[1].X, topPointBeamModel - topBeamWidth, beamPoint[1].Z);
                         }
                     }
                     double dropLength = beamDetail.LengthDrop;
@@ -322,6 +321,10 @@ namespace REVIT_IMPORT
                                 dropEP = new Point(dropSP.X, dropSP.Y + dropLength, dropSP.Z);
                             }
                         }
+                        else if (beamPosition == "middle")
+                        {
+                            MessageBox.Show("Drop at middle beam haven't supported yet");
+                        }
 
                         //ControlPoint controlPoint5 = new ControlPoint(dropEP);
                         //controlPoint5.Insert();
@@ -347,7 +350,7 @@ namespace REVIT_IMPORT
                     new Point(slabDetail.SketchOut[0].CurvePoint[0].X, slabDetail.SketchOut[0].CurvePoint[0].Y, slabDetail.SketchOut[0].CurvePoint[0].Z - bottomLevel)
                     };
                     double slabThickness;
-                    if (slabDetail.Slope == true && slabDetail.ThickNess == 130.0)
+                    if (slabDetail.Slope && slabDetail.ThickNess == 130.0)
                     {
                         slabThickness = 135.0;
                     }
@@ -401,54 +404,217 @@ namespace REVIT_IMPORT
 
                 #region Wall Input
 
+                double topWallWidth = 0.0;
+                double bottomWallWidth = 0.0;
+                double leftWallWidth = 0.0;
+                double rightWallWidth = 0.0;
+
                 ICollection<WhWall> whWallList = JsonConvert.DeserializeObject<ICollection<WhWall>>(wallData);
+
+                #region Detect wall width
 
                 foreach (WhWall wallDetail in whWallList)
                 {
-                    if (wallDetail.WhCurve == null)
+                    WhPoint wallSPInput = wallDetail.WhCurve.CurvePoint[0];
+                    WhPoint wallEPInput = wallDetail.WhCurve.CurvePoint[1];
+                    Point wallSP = new Point(wallSPInput.X, wallSPInput.Y, wallSPInput.Z - bottomLevel);
+                    Point wallEP = new Point(wallEPInput.X, wallEPInput.Y, wallEPInput.Z - bottomLevel);
+                    string wallPosition = checkPartPosition(wallSP, wallEP, centerPoint);
+                    if (modelDirection == "Vertical")
                     {
-                        break;
-                    }
-                    else
-                    {
-                        var wallSP = wallDetail.WhCurve.CurvePoint[0];
-                        var wallEP = wallDetail.WhCurve.CurvePoint[1];
-
-                        Point _wallSP = new Point(wallSP.X, wallSP.Y, wallSP.Z - bottomLevel);
-                        Point _wallEP = new Point(wallEP.X, wallEP.Y, wallEP.Z - bottomLevel);
-                        double wallHeight = Convert.ToDouble(wallDetail.Height);
-                        string wallPosition = checkPartPosition(_wallSP, _wallEP, centerPoint);
-                        List<Point> wallPoint = formatPoint(_wallSP, _wallEP, wallPosition);
-                        _wallSP = wallPoint[0];
-                        _wallEP = wallPoint[1];
-                        Beam wall = wallCreate(wallDetail.Name, wallHeight.ToString(), wallDetail.ThickNess.ToString(), _wallSP, _wallEP, wallPosition, model);
-                        wall.SetUserProperty("comment", wallPosition);
-                        model.CommitChanges();
-                        createPartCutWithBeam(model, wall);
-
-                        #region Create Wall Opening
-
-                        if (wallDetail.WhOpenings.Count > 0)
+                        bool isLeftWallTouched = false;
+                        bool isRightWallTouched = false;
+                        switch (wallPosition)
                         {
-                            foreach (WhOpening slabSketchInList in wallDetail.WhOpenings)
-                            {
-                                List<Point> wallOpeningPointList = new List<Point>();
-                                foreach (WhPoint point in slabSketchInList.OpeningPoint)
+                            case "left":
+                                if (!isLeftWallTouched)
                                 {
-                                    wallOpeningPointList.Add(new Point(point.X, point.Y, point.Z - bottomLevel));
+                                    leftWallWidth = wallDetail.ThickNess;
+                                    isLeftWallTouched = true;
                                 }
-                                Point wallOpeningFirstPoint = wallOpeningPointList[0];
-                                Point wallOpeningSecondPoint = wallOpeningPointList[1];
-                                double zValueWallOpening = wallOpeningFirstPoint.Z > wallOpeningSecondPoint.Z ? wallOpeningSecondPoint.Z : wallOpeningFirstPoint.Z;
-                                Point wallOpeningSP = new Point(wallOpeningFirstPoint.X, wallOpeningFirstPoint.Y, zValueWallOpening);
-                                Point wallOpeningEP = new Point(wallOpeningSecondPoint.X, wallOpeningSecondPoint.Y, zValueWallOpening);
+                                break;
 
-                                double openingHeight = Math.Abs(wallOpeningFirstPoint.Z - wallOpeningSecondPoint.Z);
-                                Beam wallOpening = wallCreate("wall Opening", openingHeight.ToString(), (2 * wallDetail.ThickNess).ToString(), wallOpeningSP, wallOpeningEP,
-                                    wallPosition, model);
-                                createPartCutIntersection(wall, wallOpening);
-                                wallOpening.Delete();
+                            case "right":
+                                if (!isRightWallTouched)
+                                {
+                                    rightWallWidth = wallDetail.ThickNess;
+                                    isRightWallTouched = true;
+                                }
+                                break;
+
+                            case "top":
+                                topWallWidth = wallDetail.ThickNess;
+                                break;
+
+                            case "bottom":
+                                bottomWallWidth = wallDetail.ThickNess;
+                                break;
+
+                            default:
+                                break;
+                        }
+                    }
+                    else if (modelDirection == "Horizontal")
+                    {
+                        bool isTopWallTouched = false;
+                        bool isBottomWallTouched = false;
+                        switch (wallPosition)
+                        {
+                            case "top":
+                                if (!isTopWallTouched)
+                                {
+                                    topWallWidth = wallDetail.ThickNess;
+                                    isTopWallTouched = true;
+                                }
+                                break;
+
+                            case "bottom":
+                                if (!isBottomWallTouched)
+                                {
+                                    bottomWallWidth = wallDetail.ThickNess;
+                                    isBottomWallTouched = true;
+                                }
+                                break;
+
+                            case "left":
+                                leftWallWidth = wallDetail.ThickNess;
+                                break;
+
+                            case "right":
+                                rightWallWidth = wallDetail.ThickNess;
+                                break;
+
+                            default:
+                                break;
+                        }
+                    }
+                }
+
+                #endregion Detect wall width
+
+                foreach (WhWall wallDetail in whWallList)
+                {
+                    WhPoint wallSPInput = wallDetail.WhCurve.CurvePoint[0];
+                    WhPoint wallEPInput = wallDetail.WhCurve.CurvePoint[1];
+
+                    Point wallSP = new Point(wallSPInput.X, wallSPInput.Y, wallSPInput.Z - bottomLevel);
+                    Point wallEP = new Point(wallEPInput.X, wallEPInput.Y, wallEPInput.Z - bottomLevel);
+                    double wallHeight = Convert.ToDouble(wallDetail.Height);
+                    string wallPosition = checkPartPosition(wallSP, wallEP, centerPoint);
+                    List<Point> wallPoint = formatPoint(wallSP, wallEP, wallPosition);
+                    wallSP = wallPoint[0];
+                    wallEP = wallPoint[1];
+                    Point _wallSP = null;
+                    Point _wallEP = null;
+
+                    double gapWallSpToEndOfBeamBottom = Math.Abs(wallSP.Y - bottomPointBeamModel);
+                    double gapWallEpToStartOfBeamTop = Math.Abs(wallEP.Y - topPointBeamModel);
+                    double gapWallSpToEndOfBeamLeft = Math.Abs(wallSP.X - leftPointBeamModel);
+                    double gapWallEpToEndOfBeamRight = Math.Abs(wallEP.X - rightPointBeamModel);
+                    switch (modelDirection)
+                    {
+                        case "Vertical":
+
+                            if (wallPosition == "top" || wallPosition == "bottom")
+                            {
+                                _wallSP = new Point(leftPointBeamModel + leftWallWidth, wallSP.Y, wallSP.Z);
+                                _wallEP = new Point(rightPointBeamModel - rightWallWidth, wallEP.Y, wallEP.Z);
+
+                                if (gapWallSpToEndOfBeamLeft > 200.0 || gapWallSpToEndOfBeamLeft < 2.0)
+                                {
+                                    _wallSP = wallSP;
+                                }
+
+                                if (gapWallEpToEndOfBeamRight > 200.0 || gapWallEpToEndOfBeamRight < 2.0)
+                                {
+                                    _wallEP = wallEP;
+                                }
                             }
+                            else if (wallPosition == "left" || wallPosition == "right")
+                            {
+                                _wallSP = wallSP;
+                                _wallEP = wallEP;
+
+                                //195.0 mean minimum distance from end of wall to the beam edge. normally 200 but 5 is for the odd
+                                //if smaller than 195 and higher 2.0 mean need to move wall to the beam edge
+                                // 2.0 mean the odd. if smaller 2.0
+                                if (gapWallSpToEndOfBeamBottom > 2.0 && gapWallSpToEndOfBeamBottom < 195.0)
+                                {
+                                    _wallSP = new Point(wallSP.X, bottomPointBeamModel, wallSP.Z);
+                                }
+                                if (gapWallEpToStartOfBeamTop > 2.0 && gapWallEpToStartOfBeamTop < 195.0)
+                                {
+                                    _wallEP = new Point(wallEP.X, topPointBeamModel, wallEP.Z);
+                                }
+                            }
+                            break;
+
+                        case "Horizontal":
+
+                            if (wallPosition == "left" || wallPosition == "right")
+                            {
+                                _wallSP = new Point(wallSP.X, bottomPointBeamModel + bottomWallWidth, wallSP.Z);
+                                _wallEP = new Point(wallEP.X, topPointBeamModel - topWallWidth, wallEP.Z);
+
+                                if (gapWallSpToEndOfBeamBottom > 200.0 || gapWallSpToEndOfBeamBottom < 2.0)
+                                {
+                                    _wallSP = wallSP;
+                                }
+
+                                if (gapWallEpToStartOfBeamTop > 200 || gapWallEpToStartOfBeamTop < 2.0)
+                                {
+                                    _wallEP = wallEP;
+                                }
+                            }
+                            else if (wallPosition == "top" || wallPosition == "bottom")
+                            {
+                                _wallSP = wallSP;
+                                _wallEP = wallEP;
+
+                                //195.0 mean minimum distance from end of wall to the beam edge. normally 200 but 5 is for the odd
+                                //if smaller than 195 mean need to move wall to the beam edge
+                                if (gapWallSpToEndOfBeamLeft < 195.0)
+                                {
+                                    _wallSP = new Point(leftPointBeamModel, wallSP.Y, wallSP.Z);
+                                }
+                                if (gapWallEpToEndOfBeamRight < 195.0)
+                                {
+                                    _wallEP = new Point(rightPointBeamModel, wallEP.Y, wallEP.Z);
+                                }
+                            }
+                            break;
+
+                        default:
+                            break;
+                    }
+                    Beam wall = wallCreate(wallDetail.Name, wallHeight.ToString(), wallDetail.ThickNess.ToString(), _wallSP, _wallEP, wallPosition, model);
+                    wall.SetUserProperty("comment", wallPosition);
+                    model.CommitChanges();
+                    createPartCutWithBeam(model, wall);
+                    createPartCutWithSlab(model, wall);
+
+                    #region Create Wall Opening
+
+                    if (wallDetail.WhOpenings.Count > 0)
+                    {
+                        foreach (WhOpening slabSketchInList in wallDetail.WhOpenings)
+                        {
+                            List<Point> wallOpeningPointList = new List<Point>();
+                            foreach (WhPoint point in slabSketchInList.OpeningPoint)
+                            {
+                                wallOpeningPointList.Add(new Point(point.X, point.Y, point.Z - bottomLevel));
+                            }
+                            Point wallOpeningFirstPoint = wallOpeningPointList[0];
+                            Point wallOpeningSecondPoint = wallOpeningPointList[1];
+                            double zValueWallOpening = wallOpeningFirstPoint.Z > wallOpeningSecondPoint.Z ? wallOpeningSecondPoint.Z : wallOpeningFirstPoint.Z;
+                            Point wallOpeningSP = new Point(wallOpeningFirstPoint.X, wallOpeningFirstPoint.Y, zValueWallOpening);
+                            Point wallOpeningEP = new Point(wallOpeningSecondPoint.X, wallOpeningSecondPoint.Y, zValueWallOpening);
+
+                            double openingHeight = Math.Abs(wallOpeningFirstPoint.Z - wallOpeningSecondPoint.Z);
+                            Beam wallOpening = wallCreate("wall Opening", openingHeight.ToString(), (2 * wallDetail.ThickNess).ToString(), wallOpeningSP, wallOpeningEP,
+                                wallPosition, model);
+                            createPartCutIntersection(wall, wallOpening);
+                            wallOpening.Delete();
                         }
 
                         #endregion Create Wall Opening
@@ -582,6 +748,21 @@ namespace REVIT_IMPORT
             }
         }
 
+        private static void createPartCutWithSlab(Model model, Part partShapeCut)
+        {
+            ModelObjectEnumerator slabEnum = model.GetModelObjectSelector().GetAllObjectsWithType(ModelObject.ModelObjectEnum.CONTOURPLATE);
+            OBB partShapeCutObb = createOBB(model, partShapeCut);
+            while (slabEnum.MoveNext())
+            {
+                ContourPlate slab = slabEnum.Current as ContourPlate;
+                OBB slabObb = createOBB(model, slab);
+                if (partShapeCutObb.Intersects(slabObb))
+                {
+                    createPartCutIntersection(slab, partShapeCut);
+                }
+            }
+        }
+
         private static OBB createOBB(Model model, Part part)
         {
             OBB obb = null;
@@ -659,14 +840,14 @@ namespace REVIT_IMPORT
             }
         }
 
-        private static Beam wallCreate(string wallName, string wallHeight, string wallThickness, Point wallSP, Point wallEP, string wallPosition, Model model)
+        private static Beam wallCreate(string wallName, string wallHeight, string wallThickness, Point _wallSP, Point _wallEP, string wallPosition, Model model)
         {
             Beam wall = new Beam(Beam.BeamTypeEnum.PANEL);
             wall.Name = wallName == null ? "PANEL" : wallName;
             wall.Profile.ProfileString = $"{wallHeight}*{wallThickness}";
             wall.Material.MaterialString = projectMaterial;
-            wall.StartPoint = wallSP;
-            wall.EndPoint = wallEP;
+            wall.StartPoint = _wallSP;
+            wall.EndPoint = _wallEP;
 
             if (Convert.ToDouble(wallThickness) >= 160.0)
             {
