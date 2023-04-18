@@ -5,7 +5,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{944245FB-C08D-4543-8808-B15B5257D12E}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <OutputType>WinExe</OutputType>
     <RootNamespace>REVIT_IMPORT</RootNamespace>
     <AssemblyName>REVIT_IMPORT</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
@@ -55,19 +55,23 @@
     <Reference Include="System.Xml" />
     <Reference Include="Tekla.Structures, Version=2022.0.0.0, Culture=neutral, PublicKeyToken=2f04dbe497b71114, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\Tekla Structures\2020.0\nt\bin\plugins\Tekla.Structures.dll</HintPath>
+      <HintPath>..\..\..\Tekla Structure\2020.0\nt\bin\plugins\Tekla.Structures.dll</HintPath>
     </Reference>
     <Reference Include="Tekla.Structures.Dialog, Version=2022.0.0.0, Culture=neutral, PublicKeyToken=2f04dbe497b71114, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\Tekla Structures\2020.0\nt\bin\dialogs\Tekla.Structures.Dialog.dll</HintPath>
+      <HintPath>..\..\..\Tekla Structure\2020.0\nt\bin\dialogs\Tekla.Structures.Dialog.dll</HintPath>
+    </Reference>
+    <Reference Include="Tekla.Structures.Drawing, Version=2022.0.0.0, Culture=neutral, PublicKeyToken=2f04dbe497b71114, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\Tekla Structure\2020.0\nt\bin\plugins\Tekla.Structures.Drawing.dll</HintPath>
     </Reference>
     <Reference Include="Tekla.Structures.Model, Version=2022.0.0.0, Culture=neutral, PublicKeyToken=2f04dbe497b71114, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\Tekla Structures\2020.0\nt\bin\plugins\Tekla.Structures.Model.dll</HintPath>
+      <HintPath>..\..\..\Tekla Structure\2020.0\nt\bin\plugins\Tekla.Structures.Model.dll</HintPath>
     </Reference>
     <Reference Include="Tekla.Structures.Plugins, Version=2022.0.0.0, Culture=neutral, PublicKeyToken=2f04dbe497b71114, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\Tekla Structures\2020.0\nt\bin\plugins\Tekla.Structures.Plugins.dll</HintPath>
+      <HintPath>..\..\..\Tekla Structure\2020.0\nt\bin\plugins\Tekla.Structures.Plugins.dll</HintPath>
     </Reference>
     <Reference Include="WHExtensionElement, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>

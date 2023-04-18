@@ -18,6 +18,7 @@ using TSG = Tekla.Structures.Geometry3d;
 
 using Point = Tekla.Structures.Geometry3d.Point;
 using System.Security.Cryptography.X509Certificates;
+using Tekla.Structures.Model.UI;
 
 namespace REVIT_IMPORT
 {
@@ -659,6 +660,7 @@ namespace REVIT_IMPORT
             beam.Class = "6";
             beam.StartPoint = beamSP;
             beam.EndPoint = beamEP;
+            beam.CastUnitType = Part.CastUnitTypeEnum.CAST_IN_PLACE;
             beam.Insert();
 
             beam.SetUserProperty("comment", beamPosition);
@@ -697,6 +699,7 @@ namespace REVIT_IMPORT
             slab.Material.MaterialString = slabMaterial;
             slab.Position.Depth = Position.DepthEnum.BEHIND;
             slab.Class = "11";
+            slab.CastUnitType = Part.CastUnitTypeEnum.CAST_IN_PLACE;
             slab.Insert();
             return slab;
         }
@@ -848,7 +851,7 @@ namespace REVIT_IMPORT
             wall.Material.MaterialString = projectMaterial;
             wall.StartPoint = _wallSP;
             wall.EndPoint = _wallEP;
-
+            wall.CastUnitType = Part.CastUnitTypeEnum.CAST_IN_PLACE;
             if (Convert.ToDouble(wallThickness) >= 160.0)
             {
                 wall.Class = "9";

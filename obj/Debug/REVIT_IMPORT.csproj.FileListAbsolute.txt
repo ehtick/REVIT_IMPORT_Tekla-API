@@ -22,3 +22,5 @@ D:\WorkSpace\CSharp\REVIT_IMPORT\bin\Debug\REVIT_IMPORT.exe.config
 D:\WorkSpace\CSharp\REVIT_IMPORT\bin\Debug\REVIT_IMPORT.exe
 D:\WorkSpace\CSharp\REVIT_IMPORT\obj\Debug\REVIT_IMPORT.csproj.SuggestedBindingRedirects.cache
 D:\WorkSpace\CSharp\REVIT_IMPORT\obj\Debug\REVIT_IMPORT.exe
+D:\WorkSpace\CSharp\REVIT_IMPORT\bin\Debug\Tekla.Structures.Drawing.dll
+D:\WorkSpace\CSharp\REVIT_IMPORT\bin\Debug\Tekla.Structures.Drawing.xml
